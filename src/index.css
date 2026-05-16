@@ -1,0 +1,75 @@
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.canva_outer .offcanvas{
+  border: 1px solid red;
+}
+.add_new_project{
+  display: flex;
+  align-items: center;
+}
+.add_new_project button{
+    /* background: #0d6efd; */
+    padding: 6px 12px;
+    color: #101fd8;
+    border: none;
+    border-radius: 5px;
+    background: none;
+    font-weight: 700;
+    text-decoration: underline;
+}
+.add_new_project button:hover{
+  background: #0b5ed7;
+  color: #fff;
+}
+
+/* .canva_outer .offcanvas.offcanvas-end{
+  right: 300px;
+} */
+
+.amenities_row .col-md-6{
+  margin-bottom: 18px;
+}
+.text-nowrap {
+  white-space: normal !important;
+}
+.err {
+  color: red;
+  margin-top: -3px;
+  margin-bottom: 0px;
+  font-size: 14px;
+}
+
+
+.page-title-box{
+  height: auto !important;
+  padding: 10px !important;
+}
+
+.list_none{
+  list-style: none !important;
+}
+
+.ongon_out{
+  list-style: none !important;
+  padding: 0px;
+}
+.ongon_out li{
+  padding-right: 10px;
+  margin-left: 10px;
+  border-right: 2px solid rgb(75, 74, 74);
+}
+.ongon_out li:last-child{
+  border-right: 0px solid rgb(14, 13, 13);
+}
+.ongon_out li{
+  padding-right: 10px;
+  margin-left: 10px;
+  border-right: 1px solid rgb(14, 13, 13);
+}

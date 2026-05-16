@@ -1,0 +1,353 @@
+/* HTML: <div class="loader"></div> */
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+body {
+  font-family: 'Lato', sans-serif !important;
+}
+.loader {
+  width: 40px;
+  aspect-ratio: 1;
+  animation: l2-1 2s infinite linear, l2-2 1s infinite steps(1) alternate;
+}
+@keyframes l2-1 {
+  0% {
+    transform: perspective(150px) rotateX(0deg);
+  }
+  100% {
+    transform: perspective(150px) rotateX(360deg);
+  }
+}
+@keyframes l2-2 {
+  0% {
+    background: #ffa516;
+  }
+  50% {
+    background: #f03355;
+  }
+}
+
+.ck-editor__editable {
+  min-height: 200px !important;
+}
+
+.err {
+  margin-top: 5px !important;
+}
+
+.expocode {
+  font-weight: 700 !important;
+  color: #e8edf3 !important;
+  /* text-transform: uppercase !important; */
+  padding: 0px 8px 1px 8px;
+  font-size: 18px;
+  background-color: #2e64aa;
+  border-radius: 7px 0px 0px 0px;
+}
+
+.subCard {
+  background-color: #f8f8fc;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  padding: 10px;
+}
+.react-form-wizard .wizard-tab-content {
+  min-height: 100px;
+  padding: 30px 20px 10px;
+  text-align: left !important;
+}
+.react-form-wizard .wizard-header {
+  padding: 0 !important;
+  position: relative;
+  border-radius: 3px 3px 0 0;
+  text-align: center;
+}
+ul.form-wizard-steps.wizard-nav.wizard-nav-pills.xs {
+  border-color: rgb(34, 28, 93);
+  /* border: 1px solid red; */
+  box-shadow: 0 0px 9px 0px #dcd8d8;
+  padding: 10px;
+}
+.react-form-wizard.xs .wizard-navigation .wizard-progress-with-circle {
+  position: relative;
+  top: 36px !important;
+  height: 4px;
+}
+.card-header {
+  /* background-image: linear-gradient(
+    to right,
+    #390039,
+    #660045,
+    #940048,
+    #bf0040,
+    #e22f2f
+  ) !important;
+  color: #fff !important; */
+
+  /* background-image: linear-gradient(110deg, #04A8FB 1%, #871faf 100%); */
+  background-color: #7b41d8 !important;
+  /* padding: 15px !important; */
+}
+.page-title-box {
+  height: 50px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  color: #ffffff;
+  margin-bottom: 30px;
+  box-shadow: 0px 0px 4px #00000026;
+  border: 1px solid lightgrey;
+}
+
+.card {
+  box-shadow: 1px 2px 6px #00000038;
+  border: 1px solid lightgray;
+}
+.project-card {
+  /* width: 300px; */
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.project-card:hover {
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-card h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.project-card p {
+  color: #000000;
+}
+.project-card-active {
+  /* width: 300px; */
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-image: linear-gradient(to right, #221c5d, #203073, #1b4488, #11589d, #006db0);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #fff;
+}
+.builderNameCard {
+  height: 85px;
+  /* background: red; */
+  display: flex;
+  /* justify-content: center; */
+  align-items: center;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 900;
+  margin-left: 13px;
+
+  /* background-image: linear-gradient(to right, #221c5d, #203073, #1b4488, #11589d, #006db0); */
+}
+.react-tabs__tab-list {
+  border-bottom: 2px solid #ae4b27 !important;
+}
+.react-tabs__tab {
+  display: inline-block;
+  border: 1px solid transparent;
+  /* border-bottom: none; */
+}
+.plus-btn {
+  font-weight: 600;
+}
+.react-tabs__tab--selected {
+  background: #fff;
+  border-color: #ae4b27 !important;
+  color: black;
+  border-radius: 5px 5px 0 0;
+  border-width: 2px !important;
+}
+.headTag {
+  /* color: #221c5d; */
+  color: blue;
+  font-weight: 700;
+  text-decoration: underline;
+}
+button.btn.customBtn {
+  width: 200px;
+  background: #df2b30;
+  color: #ffffff;
+}
+.btnParent {
+  display: flex;
+  justify-content: end;
+  margin-bottom: 20px;
+}
+.add_builder {
+  font-weight: 700;
+  background: none;
+  color: blue;
+  text-decoration: underline;
+  margin-top: -18px;
+  padding: 0px !important;
+}
+.builderclass {
+  margin-top: -5px !important;
+}
+.nameCardh6 {
+  font-size: 20px !important;
+}
+.projectclass {
+  margin-top: -46px !important;
+}
+.addit {
+  background: none;
+  color: blue;
+  text-decoration: underline;
+  font-weight: 700;
+  padding: 0 !important;
+}
+.locateLabel {
+  font-size: 19px;
+  color: blue;
+  font-weight: 700;
+}
+.unitclass {
+  font-size: 20px;
+  color: blue !important;
+}
+.clrinput {
+  border: solid #0000ff66 !important;
+}
+.clrinputlabel {
+  color: blue;
+}
+.chnageclr {
+  color: #ad0044;
+}
+.react-tabs__tab {
+  display: inline-block;
+  border: 1px solid transparent;
+  border-bottom: none;
+  bottom: -1px;
+  position: relative;
+  list-style: none;
+  padding: 6px 15px !important;
+  cursor: pointer;
+  color: blue !important;
+}
+.bankclass {
+  text-transform: uppercase;
+}
+.bankcheckbox {
+  border: solid #a0a1a3 !important;
+}
+.specclass {
+  color: red;
+  font-size: 19px;
+}
+input[type='file'] {
+  color: transparent !important;
+}
+input[type='file']::before {
+  content: ' ';
+  color: black;
+}
+.imgclass {
+  margin-top: -10px !important;
+}
+.imgprevclass {
+  font-size: 14px;
+  color: #6e7174;
+}
+.fileclass {
+  padding: 15px 9px !important;
+  height: 45px !important;
+  /* width: 56% !important; */
+}
+.gapclass {
+  gap: 0.5rem !important;
+}
+.removebtn {
+  padding: 0px 7px !important;
+  margin: 8px -1px !important;
+  font-size: 12px !important;
+  background: #2e65aa !important;
+}
+.w-103 {
+  width: 103px !important;
+}
+
+.form-floating > .form-control-plaintext:focus,
+.form-floating > .form-control-plaintext:not(:placeholder-shown),
+.form-floating > .form-control:focus,
+.form-floating > .form-control:not(:placeholder-shown) {
+}
+
+.mb-50 {
+  margin-top: 50px !important;
+}
+
+.form-control ,.form-select{
+  display: block !important;
+  width: 100% !important;
+  padding: 0.520rem 0.75rem!important;
+  line-height: 1.6!important;
+  background-color: #ffffff!important;
+  background-clip: padding-box !important;
+  border: 1px solid #c4d8f8 !important;
+  border-radius: 3px !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+.BuildName {
+  color: #221d5f;
+  font-size: 16px;
+  font-weight: 500;
+  padding-top: 15px;
+  margin-bottom: 10px;
+}
+.subti{
+  font-size: 16px;
+  color: #f20dff;
+  letter-spacing: 0.5px;
+}
+
+li.ps-menuitem-root.active a{
+    background: linear-gradient(90deg, rgb(145 143 142) 0%, rgba(41, 118, 204, 1) 47%, rgba(37, 28, 95, 1) 100%) !important;
+  }
+
+  li.ps-menuitem-root.active a span{
+color: #fff;
+  }
+
+  .expo_out h3{
+    color: #fff !important;
+    font-size: 20px;
+    margin-bottom: 0px;
+    margin-right: 30px;
+  }
+  .f-14p{
+    font-size: 14px !important;
+  }
+
+  .edit_ot{
+    position: absolute;
+    right: 15px;
+  }
+
+
+body .custom-validation .form-floating > .form-control:not(:placeholder-shown) {
+    /* padding: 0px !important; */
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    height: 0px !important;
+    min-height: 50px;
+    line-height: 30px;
+}
