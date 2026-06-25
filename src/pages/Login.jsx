@@ -12,13 +12,13 @@ const Login = () => {
     const [formErr, setFormErr] = useState({});
     const [loader, setLoader] = useState(false);
     const [user, setUser] = useState({});
-    const [OtpPopUp,setOtpPopUp]=useState(false)
+    const [OtpPopUp, setOtpPopUp] = useState(false)
     const handleChange = (e) => {
         setLoginForm({ ...loginForm, [e.target.name]: e.target.value });
     }
-    // useEffect(()=>{ 
-    //     localStorage.clear()
-    // },[])
+    useEffect(() => {
+        localStorage.clear()
+    }, [])
     const validateForm = () => {
         let errors = {};
         let formIsValid = true;
@@ -35,7 +35,7 @@ const Login = () => {
         e.preventDefault();
         setLoader(true);
         if (validateForm()) {
-            const response = await expoAdminClient.post('/authLogin/login.php', loginForm);
+            const response = await expoAdminClient.post('/authLogin/loginalliance.php', loginForm);
             if (response.data.status) {
                 setLoader(false);
                 setOtpPopUp(true)
@@ -49,7 +49,7 @@ const Login = () => {
         setLoader(false);
     }
 
-    const handleClose=()=>{
+    const handleClose = () => {
         setOtpPopUp(false)
     }
 
@@ -57,7 +57,7 @@ const Login = () => {
         <>
             <UserInfoContext.Provider value={{ user }}>
                 {loader && <Loader />}
-                
+
                 <div className="container-fluid authentication-bg overflow-hidden">
                     <div className="bg-overlay"></div>
                     <div className="row align-items-center justify-content-center min-vh-100">
@@ -76,35 +76,35 @@ const Login = () => {
                                     </div>
 
                                     <div className="otp_boxes">
-                                        {!OtpPopUp && 
-                                        <form>
-                                            <label>Kindly input your WhatsApp number, and you will be sent a 4 Digit-Passcode for verification.</label>
-                                            <div className="input-group auth-form-group-custom mb-3">
-                                                <span
-                                                    className="input-group-text bg-primary bg-opacity-10 fs-16 "
-                                                    id="basic-addon1"
-                                                >
-                                                    {/* <i className="mdi mdi-account-outline auti-custom-input-icon"></i> */}
-                                                    <FaUserAlt />
-                                                    
-                                                </span>
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    placeholder="Enter Mobile Number"
-                                                    aria-label="Username"
-                                                    aria-describedby="basic-addon1"
-                                                    name="mobile"
-                                                    onChange={handleChange}
-                                                />
+                                        {!OtpPopUp &&
+                                            <form>
+                                                <label>Kindly input your WhatsApp number, and you will be sent a 6 Digit-Passcode for verification.</label>
+                                                <div className="input-group auth-form-group-custom mb-3">
+                                                    <span
+                                                        className="input-group-text bg-primary bg-opacity-10 fs-16 "
+                                                        id="basic-addon1"
+                                                    >
+                                                        {/* <i className="mdi mdi-account-outline auti-custom-input-icon"></i> */}
+                                                        <FaUserAlt />
 
-                                            </div>
-                                            <div>
-                                                {formErr.mobile && <p className="err">{formErr.mobile}</p>}
-                                                {!formErr.username && <p className="err">{formErr.username}</p>}
-                                            </div>
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control"
+                                                        placeholder="Enter Mobile Number"
+                                                        aria-label="Username"
+                                                        aria-describedby="basic-addon1"
+                                                        name="mobile"
+                                                        onChange={handleChange}
+                                                    />
 
-                                            {/* <div className="input-group auth-form-group-custom mb-3">
+                                                </div>
+                                                <div>
+                                                    {formErr.mobile && <p className="err">{formErr.mobile}</p>}
+                                                    {!formErr.username && <p className="err">{formErr.username}</p>}
+                                                </div>
+
+                                                {/* <div className="input-group auth-form-group-custom mb-3">
                                                 <span
                                                     className="input-group-text bg-primary bg-opacity-10 fs-16"
                                                     id="basic-addon2"
@@ -123,31 +123,31 @@ const Login = () => {
                                                 />
 
                                             </div> */}
-                                            {/* <div>
+                                                {/* <div>
                                                 {formErr.password && <p class="err">{formErr.password}</p>}
                                             </div> */}
-                                            {/* <p>Kindly input your WhatsApp number, and you will be sent a passcode for verification.</p> */}
-                                            <div className="pt-3 text-center">
-                                                <button
-                                                    className="btn btn-primary w-xl waves-effect waves-light"
-                                                    type="button"
-                                                    onClick={handleSubmit}
-                                                >
-                                                   Continue
-                                                </button>
-                                            </div>
+                                                {/* <p>Kindly input your WhatsApp number, and you will be sent a passcode for verification.</p> */}
+                                                <div className="pt-3 text-center">
+                                                    <button
+                                                        className="btn btn-primary w-xl waves-effect waves-light"
+                                                        type="button"
+                                                        onClick={handleSubmit}
+                                                    >
+                                                        Continue
+                                                    </button>
+                                                </div>
 
-                                            <div>
-                                            </div>
-                                        </form>}
-                                        {OtpPopUp && <Otp loginDetails={loginForm}  handleClose={handleClose}/>}
+                                                <div>
+                                                </div>
+                                            </form>}
+                                        {OtpPopUp && <Otp loginDetails={loginForm} handleClose={handleClose} />}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
             </UserInfoContext.Provider>
         </>
     );

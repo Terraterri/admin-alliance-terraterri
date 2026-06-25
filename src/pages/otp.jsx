@@ -3,6 +3,8 @@ import OtpInput from 'react-otp-input';
 import { authClient, expoAdminClient } from "../utils/httpClient";
 import { FaRegEdit } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import { toastError } from "../utils/toast";
+
 const Otp = (props) => {
     const { handleClose, loginDetails } = props;
     const navigation = useNavigate();
@@ -17,21 +19,22 @@ const Otp = (props) => {
         if (response.data.status) {
             localStorage.setItem('adminToken', response.data.token.token);
             navigation('/dashboard');
+        } else {
+            toastError(response.data.message || "OTP is wrong");
         }
     }
-    console.log("Admin Token:", localStorage.getItem('adminToken'));
     return (
         <div className='opt_main'>
             <h4>Verify Your Number</h4>
-            <h3>+91 9063754321  <button
+            <h3>{loginDetails?.mobile || "+91 9063754321"}  <button
                 className="btn btn-primary w-xl waves-effect waves-light"
                 type="button"
                 onClick={handleClose}><FaRegEdit /></button></h3>
-            <label clas>Please provide the 4-Digit  passcode to complete your registration</label>
+            <label>Please provide the 6-Digit passcode to complete your registration</label>
             <OtpInput
                 value={otp}
                 onChange={setOtp}
-                numInputs={4}
+                numInputs={6}
                 // renderSeparator={<span>-</span>}
                 renderInput={(props) => <input {...props} />}
             />
