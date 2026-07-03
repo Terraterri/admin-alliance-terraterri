@@ -5,6 +5,7 @@ import { FaRegEdit } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { toastError } from "../utils/toast";
 
+
 const Otp = (props) => {
     const { handleClose, loginDetails } = props;
     const navigation = useNavigate();
