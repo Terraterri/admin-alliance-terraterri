@@ -5,7 +5,7 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 
 // const currentPath = document.location.pathname
-// console.log(currentPath);
+//// console.log(currentPath);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   // <BrowserRouter>
