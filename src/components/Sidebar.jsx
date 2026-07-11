@@ -11,6 +11,7 @@ const Sidebars = () => {
       url: "/dashboard",
       className: 'active',
     },
+    
     {
       label: 'Expo Master',
       subMenu: [
@@ -66,10 +67,15 @@ const Sidebars = () => {
         // },
       ],
     },
+        {
+      label: 'Expo Configuration',
+      url: "expo/create",
+    },
     {
       label: 'Responses',
       url: "/connect-inquiries",
     },
+
     {
       label: 'Exhibitors Management',
       url: "builderparticipate",

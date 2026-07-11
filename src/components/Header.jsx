@@ -22,7 +22,7 @@ const Header = () => {
             </span>
           </div>
           <div className='expo_out'>
-            <h3>Expo Admin</h3>
+            <h3>Alliance Admin</h3>
           </div>
           <div className="log_ot ">
          
