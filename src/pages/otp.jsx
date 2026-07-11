@@ -31,7 +31,7 @@ const Otp = (props) => {
                 className="btn btn-primary w-xl waves-effect waves-light"
                 type="button"
                 onClick={handleClose}><FaRegEdit /></button></h3>
-            <label>Please provide the 6-Digit passcode to complete your registration</label>
+            {/* <label>Please provide the 6-Digit passcode to complete your registration</label> */}
             <OtpInput
                 value={otp}
                 onChange={setOtp}
