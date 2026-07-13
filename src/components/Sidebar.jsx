@@ -11,7 +11,7 @@ const Sidebars = () => {
       url: "/dashboard",
       className: 'active',
     },
-    
+
     {
       label: 'Expo Master',
       subMenu: [
@@ -39,7 +39,7 @@ const Sidebars = () => {
           label: 'Add Source',
           url: "/source"
         },
-     
+
       ],
     },
     {
@@ -53,21 +53,21 @@ const Sidebars = () => {
           label: 'OnGoing Expo',
           url: "/expo/ongoing",
         },
-        // {
-        //   label: 'Future Expo',
-        //   url: "/expo/future",
-        // },
-        // {
-        //   label: 'Completed Expo',
-        //   url: "/expo/completed",
-        // },
-        // {
-        //   label: 'Deleted Expo',
-        //   url: "/expo/deleted",
-        // },
+        {
+          label: 'Future Expo',
+          url: "/expo/future",
+        },
+        {
+          label: 'Completed Expo',
+          url: "/expo/completed",
+        },
+        {
+          label: 'Deleted Expo',
+          url: "/expo/deleted",
+        },
       ],
     },
-        {
+    {
       label: 'Expo Configuration',
       url: "expo/create",
     },
@@ -80,19 +80,19 @@ const Sidebars = () => {
       label: 'Exhibitors Management',
       url: "builderparticipate",
     },
- 
-{
-     label: 'Visitor Management',
+
+    {
+      label: 'Visitor Management',
       subMenu: [
         {
-         label: 'Visitor Registrations',
-      url: "/visitors-by-expo/TTUSNew2029AUG16-R",
+          label: 'Visitor Registrations',
+          url: "/visitors-by-expo/TTInHyd2025JUN8-R",
         },
         {
-         label: 'Visitor Entries',
-      url: "/visitors-summary/TTUSNew2029AUG16-R",
+          label: 'Visitor Entries',
+          url: "/visitors-summary/TTInHyd2025JUN8-R",
         },
-            {
+        {
           label: 'Block Visitors',
           url: "/block-number"
         },
@@ -100,7 +100,7 @@ const Sidebars = () => {
       ]
 
     },
-    
+
   ];
 
 

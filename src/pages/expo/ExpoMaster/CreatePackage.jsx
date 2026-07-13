@@ -172,6 +172,9 @@ const CreatePackage = () => {
   };
 
   const edit = async (data) => {
+    if (data?.country) {
+      getCitiesData(data.country);
+    }
     setForm({
       ...form,
       country: data?.country,
@@ -247,7 +250,7 @@ const CreatePackage = () => {
                       </ol>
                     </div>
                     <div className="page-title-right">
-                      <button className="btn btn-info" onClick={() => setShow(true)}>
+                      <button className="btn btn-info" onClick={() => { setShow(true); setForm({}); setUpdate(false); setFormErr({}); }}>
                         Create Package
                       </button>
                     </div>
@@ -348,12 +351,14 @@ const CreatePackage = () => {
                 </div>
               </div>
 
-              <Offcanvas show={show} onHide={() => setShow(false)} placement="end">
-                <Offcanvas.Header closeButton></Offcanvas.Header>
+              <Offcanvas show={show} onHide={() => { setShow(false); setForm({}); setUpdate(false); setFormErr({}); }} placement="end">
+                <Offcanvas.Header closeButton>
+                  <Offcanvas.Title>{update ? 'Edit' : 'Create'} Package</Offcanvas.Title>
+                </Offcanvas.Header>
                 <Offcanvas.Body>
                   <div className="card">
                     <div className="card-header">
-                      <h3 className="card-title">Create Package</h3>
+                      <h3 className="card-title">{update ? 'Edit' : 'Create'} Package</h3>
                     </div>
                     <div className="card-body">
                       <form className="custom-validation">

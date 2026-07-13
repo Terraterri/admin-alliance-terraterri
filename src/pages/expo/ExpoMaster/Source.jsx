@@ -120,6 +120,10 @@ const Source = () => {
         }
     };
 
+    useEffect(() => {
+        fetchSources();
+    }, [currentPage, searchTerm]);
+
     const deleteType = async (id) => {
         try {
             setLoading(true);
@@ -162,7 +166,7 @@ const Source = () => {
                                         </ol>
                                     </div>
                                     <div className="page-title-right">
-                                        <button className="btn btn-info" onClick={() => setShow(true)}>
+                                        <button className="btn btn-info" onClick={() => { setShow(true); setForm({}); setUpdate(false); setFormErr({}); }}>
                                             Add Source
                                         </button>
                                     </div>
@@ -239,7 +243,7 @@ const Source = () => {
                         </div>
 
                         {/* Add/Edit Expo Type Offcanvas */}
-                        <Offcanvas show={show} onHide={() => setShow(false)} placement="end">
+                        <Offcanvas show={show} onHide={() => { setShow(false); setForm({}); setUpdate(false); setFormErr({}); }} placement="end">
                             <Offcanvas.Header closeButton>
                                 <Offcanvas.Title>{update ? 'Edit' : 'Add'} Source</Offcanvas.Title>
                             </Offcanvas.Header>
