@@ -36,18 +36,25 @@ const NoofVisitors = () => {
     setLoading(true);
     try {
       const res = await expoAdminClient.get(
-        `expoUserAnalytics/expo/get.php?expoId=${expoUnqCode}&limit=${itemsPerPage}&skip=${currentPage - 1}`,
+        `expoUserAnalytics/expo/get.php?expoId=${localStorage.getItem("expoCode")}&limit=${itemsPerPage}&skip=${currentPage - 1}`,
+        {
+          headers: {
+            "authorization": localStorage.getItem("adminToken")
+          }
+        }
       );
 
       if (res?.data?.status) {
         setExpoVisitors(res.data.data || []);
         setTotalPages(Math.ceil(res.data.count / itemsPerPage))
       } else {
-        setExpoData([]);
+        setExpoVisitors([]);
       }
     } catch (error) {
+      setExpoVisitors([]);
+
       console.error("Error fetching data:", error);
-      toastError("Failed to fetch visitor registrations.");
+      // toastError("Failed to fetch visitor registrations.");
     } finally {
       setLoading(false);
     }
@@ -79,25 +86,25 @@ const NoofVisitors = () => {
               </div>
             </div>
 
- <div className="row justify-content-center">
-<form className="custom-validation mb-3" action="#">
-    <div className="row align-items-center">
-        <div className="col-md-3 mt-3">
-            <div className="">
-                <div className="form-floating"><input type="date" id="from-date" className="form-control" name="fromdate" /><label
+            <div className="row justify-content-center">
+              <form className="custom-validation mb-3" action="#">
+                <div className="row align-items-center">
+                  <div className="col-md-3 mt-3">
+                    <div className="">
+                      <div className="form-floating"><input type="date" id="from-date" className="form-control" name="fromdate" /><label
                         for="from-date" className="fw-normal">From Date</label></div>
-            </div>
-        </div>
-        <div className="col-md-3 mt-3">
-            <div className="">
-                <div className="form-floating"><input type="date" id="to-date" className="form-control" name="todate" /><label
+                    </div>
+                  </div>
+                  <div className="col-md-3 mt-3">
+                    <div className="">
+                      <div className="form-floating"><input type="date" id="to-date" className="form-control" name="todate" /><label
                         for="to-date" className="fw-normal">To Date</label></div>
+                    </div>
+                  </div>
+                  <div className="col-md-1 mt-3"><button className="btn btn-primary" type="submit">Search</button></div>
+                </div>
+              </form>
             </div>
-        </div>
-        <div className="col-md-1 mt-3"><button className="btn btn-primary" type="submit">Search</button></div>
-    </div>
-</form>
-</div>
             <div className="row justify-content-center">
               <div className="col-md-12">
                 <div className="card">
@@ -121,36 +128,46 @@ const NoofVisitors = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {expoVisitors.map((ele, idx) => (
-                            <tr key={idx}>
-                              <td>{((currentPage - 1) * 10) + idx + 1}</td>
-                              <td>{ele.name}</td>
-                              <td>N/A</td>
-                              <td>{ele.number}</td>
-                              <td>{ele.email}</td>
-                              <td>{ele.joined_at}</td>
-                              <td>
-                                <span className='icons_list'>
-                                  <Button variant="primary" onClick={handleShow} className='listin_btn'><FaFileDownload />
-                                  </Button>
-                                  <Button variant="primary" onClick={handleWhatsapp} className='listin_btn'><MdWhatsapp />
-                                  </Button>
-                                  <Button variant="primary" onClick={setEnquiryShow} className='listin_btn'><PiNote />
-                                  </Button>
-                                  <Button variant="primary" onClick={setDropMessageShow} className='listin_btn'><RiMessage2Fill />
-                                  </Button>
-                                </span>
-                              </td>
-                              <td> <span className='sta_iconn'><Button variant="primary" onClick={setCommentShow} className='listin_btn'><GoEye /></Button></span></td>
+
+                          {expoVisitors.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="text-center">No visitors found.</td>
                             </tr>
-                          ))}
+                          ) : (
+                            expoVisitors.map((ele, idx) => (
+                              <tr key={idx}>
+                                <td>{((currentPage - 1) * 10) + idx + 1}</td>
+                                <td>{ele.name}</td>
+                                <td>N/A</td>
+                                <td>{ele.number}</td>
+                                <td>{ele.email}</td>
+                                <td>{ele.joined_at}</td>
+                                <td>
+                                  <span className='icons_list'>
+                                    <Button variant="primary" onClick={handleShow} className='listin_btn'><FaFileDownload />
+                                    </Button>
+                                    <Button variant="primary" onClick={handleWhatsapp} className='listin_btn'><MdWhatsapp />
+                                    </Button>
+                                    <Button variant="primary" onClick={setEnquiryShow} className='listin_btn'><PiNote />
+                                    </Button>
+                                    <Button variant="primary" onClick={setDropMessageShow} className='listin_btn'><RiMessage2Fill />
+                                    </Button>
+                                  </span>
+                                </td>
+                                <td> <span className='sta_iconn'><Button variant="primary" onClick={setCommentShow} className='listin_btn'><GoEye /></Button></span></td>
+                              </tr>
+                            )))
+                          }
                         </tbody>
                       </table>
-                      <Pagenation
-                        currentPage={currentPage}
-                        setCurrentPage={setCurrentPage}
-                        totalPages={totalPages}
-                      />
+
+                      {expoVisitors.length > 0 && (
+
+                        <Pagenation
+                          currentPage={currentPage}
+                          setCurrentPage={setCurrentPage}
+                          totalPages={totalPages}
+                        />)}
                     </div>
                   </div>
                 </div>

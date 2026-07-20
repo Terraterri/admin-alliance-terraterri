@@ -3,13 +3,14 @@ import Loader from '../../components/Loader';
 import { expoClient, expoAdminClient } from '../../utils/httpClient';
 import { toastSuccess, toastError, toastWarning } from '../../utils/toast';
 import { useDispatch, useSelector } from 'react-redux';
-import { setExpo, setError } from '../../store/slices/ExpoSlice';
+import { setExpo, clearExpo, setError } from '../../store/slices/ExpoSlice';
 import Modal from 'react-bootstrap/Modal';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { IoSearch } from "react-icons/io5";
 
 const Recept = () => {
-
+  const navigate = useNavigate();
+  const { expoUnqCode } = useParams();
   const dispatchFormData = useDispatch();
   const formState = useSelector(state => state.expo);
 
@@ -20,21 +21,19 @@ const Recept = () => {
   const [imagesData, setImagesData] = useState({});
 
   const [show, setShow] = useState(false);
-  const [imageValue, setImageValue] = useState()
+  const [imageValue, setImageValue] = useState();
 
   const handleClose = () => setShow(false);
 
   const handleChange = (e) => {
-    dispatchFormData(setExpo({ [e.target.name]: e.target.value }))
-    // setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
+    dispatchFormData(setExpo({ [e.target.name]: e.target.value }));
+  };
 
   const handleImagesState = (e, url) => {
     setImagesData({
       ...imagesData,
       [e.target.name]: url
-    })
+    });
     dispatchFormData(setExpo({ [e.target.name]: url }));
     setLoading(false);
   };
@@ -57,13 +56,12 @@ const Recept = () => {
     } catch (error) {
       alert('error uploading Image');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   };
 
-
   const handleVideos3 = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     let formData = new FormData();
     formData.append('video', e.target.files[0]);
     try {
@@ -79,67 +77,136 @@ const Recept = () => {
         dispatchFormData(setExpo({ [e.target.name]: res?.data?.url }));
       }
     } catch (error) {
-      alert('error uploading Image');
+      alert('error uploading Video');
     } finally {
-      setLoading(false)
-    } 
-  }
+      setLoading(false);
+    }
+  };
+
+  const handleVideos2 = handleVideos3;
 
   useEffect(() => {
     console.log('form =====>', formState);
-  }, [formState])
+  }, [formState]);
 
   const validate = () => {
     let isvalid = true;
     let errors = {};
+    const currentExpo = formState['expo'] || {};
 
-    if (!formState['expo'].rec1_name) {
-      isvalid = false;
-      errors.rec1_name = 'Avatar 1 name is mandatory field'
+    const avatarOneName = currentExpo.avatarOneName ?? currentExpo.roles?.["Receptionist1"]?.[0]?.name;
+    const avatarOneNumber = currentExpo.avatarOneNumber ?? currentExpo.roles?.["Receptionist1"]?.[0]?.mobile;
+    const avatarTwoName = currentExpo.avatarTwoName ?? currentExpo.roles?.["Receptionist2"]?.[0]?.name;
+    const avatarTwoNumber = currentExpo.avatarTwoNumber ?? currentExpo.roles?.["Receptionist2"]?.[0]?.mobile;
 
+    if (!avatarOneName) {
+      isvalid = false;
+      errors.avatarOneName = 'Receptionist 1 name is a mandatory field';
+    }
+    if (!avatarOneNumber) {
+      isvalid = false;
+      errors.avatarOneNumber = 'Receptionist 1 mobile is a mandatory field';
+    }
+    if (!avatarTwoName) {
+      isvalid = false;
+      errors.avatarTwoName = 'Receptionist 2 name is a mandatory field';
+    }
+    if (!avatarTwoNumber) {
+      isvalid = false;
+      errors.avatarTwoNumber = 'Receptionist 2 mobile is a mandatory field';
     }
 
-    if (!formState['expo'].rec1_mobile) {
-      isvalid = false;
-      errors.rec1_mobile = 'Avatar 1 mobile is mandatory field'
+    setFormErr(errors);
+    return isvalid;
+  };
 
+  const submitExpo = async () => {
+    if (!validate()) {
+      toastError('Please fill in all mandatory fields.');
+      return;
     }
-    if (!formState['expo'].rec1_login) {
-      isvalid = false;
-      errors.rec1_login = 'Avatar 1 login id is mandatory field'
 
-    }
-    if (!formState['expo'].rec1_password) {
-      isvalid = false;
-      errors.rec1_password = 'Avatar 1 password is mandatory field'
+    const code = expoUnqCode || localStorage.getItem('expoCode') || formState['expo']?.expoUnqCode;
+    try {
+      setLoading(true);
+      let res;
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('adminToken')}` || null
+        }
+      };
 
-    }
-    if (!formState['expo'].rec2_name) {
-      isvalid = false;
-      errors.rec2_name = 'Avatar 2 name is mandatory field'
+      const currentExpo = formState['expo'] || {};
+      const avatarOneName = currentExpo.avatarOneName ?? currentExpo.roles?.["Receptionist1"]?.[0]?.name ?? '';
+      const avatarOneNumber = currentExpo.avatarOneNumber ?? currentExpo.roles?.["Receptionist1"]?.[0]?.mobile ?? '';
+      const avatarTwoName = currentExpo.avatarTwoName ?? currentExpo.roles?.["Receptionist2"]?.[0]?.name ?? '';
+      const avatarTwoNumber = currentExpo.avatarTwoNumber ?? currentExpo.roles?.["Receptionist2"]?.[0]?.mobile ?? '';
+      const arena_manager1 = currentExpo.arena_manager1 ?? currentExpo.arena_manager1Name ?? currentExpo.roles?.["Arena Manager1"]?.[0]?.name ?? '';
+      const arena_manager1Number = currentExpo.arena_manager1Number ?? currentExpo.arena_manager1Mobile ?? currentExpo.roles?.["Arena Manager1"]?.[0]?.mobile ?? '';
+      const arena_manager2 = currentExpo.arena_manager2 ?? currentExpo.arena_manager2Name ?? currentExpo.roles?.["Arena Manager2"]?.[0]?.name ?? '';
+      const arena_manager2Number = currentExpo.arena_manager2Number ?? currentExpo.arena_manager2Mobile ?? currentExpo.roles?.["Arena Manager2"]?.[0]?.mobile ?? '';
 
+      const roles = {
+        Receptionist1: [{ name: avatarOneName, mobile: avatarOneNumber, role: 'Receptionist1', tableNo: '1' }],
+        Receptionist2: [{ name: avatarTwoName, mobile: avatarTwoNumber, role: 'Receptionist2', tableNo: '2' }],
+        'Arena Manager1': [{ name: arena_manager1, mobile: arena_manager1Number, role: 'Arena Manager1', tableNo: '3' }],
+        'Arena Manager2': [{ name: arena_manager2, mobile: arena_manager2Number, role: 'Arena Manager2', tableNo: '4' }]
+      };
+
+      const managers = [
+        { name: avatarOneName, mobile: avatarOneNumber, role: 'Receptionist1', tableNo: '1' },
+        { name: avatarTwoName, mobile: avatarTwoNumber, role: 'Receptionist2', tableNo: '2' },
+        { name: arena_manager1, mobile: arena_manager1Number, role: 'Arena Manager1', tableNo: '3' },
+        { name: arena_manager2, mobile: arena_manager2Number, role: 'Arena Manager2', tableNo: '4' }
+      ];
+
+      const payload = {
+        ...currentExpo,
+        avatarOneName,
+        avatarOneNumber,
+        avatarTwoName,
+        avatarTwoNumber,
+        arena_manager1,
+        arena_manager1Name: arena_manager1,
+        arena_manager1Number,
+        arena_manager1Mobile: arena_manager1Number,
+        arena_manager2,
+        arena_manager2Name: arena_manager2,
+        arena_manager2Number,
+        arena_manager2Mobile: arena_manager2Number,
+        roles,
+        managers,
+        ...(code ? { expoUnqCode: code } : {})
+      };
+
+      if (code) {
+        res = await expoAdminClient.post('NewExpo/update.php', payload, config);
+      } else {
+        res = await expoAdminClient.post('NewExpo/create.php', payload, config);
+      }
+
+      if (res?.data?.status) {
+        toastSuccess(res?.data?.message || 'Expo saved successfully');
+        dispatchFormData(clearExpo());
+
+        //navigate(`/expo/create`);
+      } else {
+        toastError(res?.data?.message || 'Failed to save expo');
+      }
+    } catch (e) {
+      console.error(e);
+      toastError(e?.response?.data?.message || 'Failed to save expo');
+    } finally {
+      setLoading(false);
     }
-    if (!formState['expo'].rec2_mobile) {
-      isvalid = false;
-      errors.rec2_mobile = 'Avatar 2 mobile is mandatory field'
-    }
-    if (!formState['expo'].rec2_login) {
-      isvalid = false;
-      errors.rec2_login = 'Avatar 2 login is mandatory field'
-    }
-    if (!formState['expo'].rec2_password) {
-      isvalid = false;
-      errors.rec2_password = 'Avatar 2 password is mandatory field'
-    }
-    setFormErr(errors)
-    return isvalid
-  }
+  };
 
   return (
     <>
       {loading && <Loader />}
       <form>
-        <h6 className="createHead mb-4">Create Receptionist : </h6>
+        <h6 className="createHead mb-4">Receptionists : </h6>
 
         <div className="row mb-4">
           <div className="col-md-2">
@@ -151,7 +218,7 @@ const Recept = () => {
                 name="avatarOneName"
                 className="form-control"
                 onChange={handleChange}
-                value={formState['expo'].avatarOneName || ''}
+                value={formState['expo']?.avatarOneName ?? formState['expo']?.roles?.["Receptionist1"]?.[0]?.name ?? ''}
               />
               <label htmlFor="title" className="fw-normal">
                 Name
@@ -165,7 +232,7 @@ const Recept = () => {
                 name="avatarOneNumber"
                 className="form-control"
                 onChange={handleChange}
-                value={formState['expo'].avatarOneNumber || ''}
+                value={formState['expo']?.avatarOneNumber ?? formState['expo']?.roles?.["Receptionist1"]?.[0]?.mobile ?? ''}
               />
               <label htmlFor="title" className="fw-normal">
                 Mobile Number
@@ -183,7 +250,7 @@ const Recept = () => {
             <div className="form-floating">
               <input type="text" placeholder="Name" name="avatarTwoName"
                 onChange={handleChange}
-                value={formState['expo'].avatarTwoName || ''}
+                value={formState['expo']?.avatarTwoName ?? formState['expo']?.roles?.["Receptionist2"]?.[0]?.name ?? ''}
                 className="form-control" />
               <label htmlFor="title" className="fw-normal">
                 Name
@@ -197,13 +264,91 @@ const Recept = () => {
                 placeholder="Name"
                 name="avatarTwoNumber"
                 onChange={handleChange}
-                value={formState['expo'].avatarTwoNumber || ''}
+                value={formState['expo']?.avatarTwoNumber ?? formState['expo']?.roles?.["Receptionist2"]?.[0]?.mobile ?? ''}
                 className="form-control" />
               <label htmlFor="title" className="fw-normal">
                 Mobile Number
               </label>
             </div>
             {formErr.avatarTwoNumber && <p className="err">{formErr.avatarTwoNumber}</p>}
+          </div>
+        </div>
+
+        <div className="row">
+          <h6 className="createHead mb-3">Arena Managers :</h6>
+
+          <div className="row mb-4 col-md-11">
+            <div className="col-md-2">
+              <h6 className="BuildName">Arena Manager 1 :</h6>
+            </div>
+            <div className="col-md-5">
+              <div className="form-floating">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  name="arena_manager1"
+                  className="form-control"
+                  onChange={handleChange}
+                  value={formState['expo']?.arena_manager1 ?? formState['expo']?.arena_manager1Name ?? formState['expo']?.roles?.["Arena Manager1"]?.[0]?.name ?? ''}
+                />
+                <label htmlFor="arena_manager1" className="fw-normal">
+                  Name
+                </label>
+              </div>
+            </div>
+
+            <div className="col-md-5">
+              <div className="form-floating">
+                <input
+                  type="number"
+                  placeholder="Mobile Number"
+                  name="arena_manager1Number"
+                  className="form-control"
+                  onChange={handleChange}
+                  value={formState['expo']?.arena_manager1Number ?? formState['expo']?.arena_manager1Mobile ?? formState['expo']?.roles?.["Arena Manager1"]?.[0]?.mobile ?? ''}
+                />
+                <label htmlFor="arena_manager1Number" className="fw-normal">
+                  Mobile Number
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="row mb-4 col-md-11">
+            <div className="col-md-2">
+              <h6 className="BuildName">Arena Manager 2 :</h6>
+            </div>
+            <div className="col-md-5">
+              <div className="form-floating">
+                <input
+                  type="text"
+                  placeholder="Name"
+                  name="arena_manager2"
+                  className="form-control"
+                  onChange={handleChange}
+                  value={formState['expo']?.arena_manager2 ?? formState['expo']?.arena_manager2Name ?? formState['expo']?.roles?.["Arena Manager2"]?.[0]?.name ?? ''}
+                />
+                <label htmlFor="arena_manager2" className="fw-normal">
+                  Name
+                </label>
+              </div>
+            </div>
+
+            <div className="col-md-5">
+              <div className="form-floating">
+                <input
+                  type="number"
+                  placeholder="Mobile Number"
+                  name="arena_manager2Number"
+                  className="form-control"
+                  onChange={handleChange}
+                  value={formState['expo']?.arena_manager2Number ?? formState['expo']?.arena_manager2Mobile ?? formState['expo']?.roles?.["Arena Manager2"]?.[0]?.mobile ?? ''}
+                />
+                <label htmlFor="arena_manager2Number" className="fw-normal">
+                  Mobile Number
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -509,6 +654,21 @@ const Recept = () => {
 
           </Modal>
         </div>
+
+
+
+
+
+        <div className="row mb-4 col-md-11">
+          <div className="row mt-5">
+            <div className="btn-subb mb-5">
+              <button type="button" className="save" onClick={submitExpo}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+
       </form>
     </>
   );

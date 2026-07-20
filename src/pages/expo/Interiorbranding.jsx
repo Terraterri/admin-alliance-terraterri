@@ -36,32 +36,6 @@ function Interiorbranding() {
     console.log(formState, 'formStateformState');
   }, [formState]);
 
-  const handleForm = (e) => {
-    const { name, value, id } = e.target;
-
-    setFormData((prev) => {
-      const updatedForm = { ...prev, managers: prev.managers || [] };
-
-      if (id.startsWith('managers')) {
-        const index = parseInt(id.split('-')[1], 10) - 1;
-        const updatedManagers = [...updatedForm.managers];
-
-        updatedManagers[index] = {
-          ...updatedManagers[index],
-          [name]: value,
-          'role': 'Arena Manager'
-        };
-
-        updatedForm.managers = updatedManagers;
-      }
-
-      return updatedForm;
-    });
-  };
-
-  useEffect(() => {
-    dispatchFormData(setExpo(formData))
-  }, [formData])
 
 
   const handleChange = (e) => {
@@ -102,7 +76,7 @@ function Interiorbranding() {
   };
 
   const submitExpo = async () => {
-
+    const code = expoUnqCode || localStorage.getItem('expoCode') || formState['expo']?.expoUnqCode;
     try {
       setLoading(true);
       let res;
@@ -112,14 +86,20 @@ function Interiorbranding() {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}` || null
         }
       };
-      if (expoUnqCode) {
-        res = await expoAdminClient.post('NewExpo/update.php', formState['expo'], config);
+
+      const payload = {
+        ...formState['expo'],
+        ...(code ? { expoUnqCode: code } : {})
+      };
+
+      if (code) {
+        res = await expoAdminClient.post('NewExpo/update.php', payload, config);
       } else {
-        res = await expoAdminClient.post('NewExpo/create.php', formState['expo'], config);
+        res = await expoAdminClient.post('NewExpo/create.php', payload, config);
       }
       if (res?.data?.status) {
         toastSuccess(res?.data?.message);
-        dispatchFormData(clearExpo())
+        dispatchFormData(clearExpo());
         navigate('/futureexpo');
         // setFormErr({});
       }
@@ -255,44 +235,82 @@ function Interiorbranding() {
     <>
       <form className="receptForm">
 
-        {[...Array(4)].map((_, index) => (
-          <div className="row mb-4 col-md-11" key={index}>
-            <div className="col-md-2">
-              <h6 className="BuildName">Arena Managers {index + 1} :</h6>
-            </div>
-            <div className="col-md-5">
-              <div className="form-floating">
-                <input
-                  type="text"
-                  placeholder="Name"
-                  name="name"
-                  id={`managers-${index + 1}`}
-                  className="form-control"
-                  onChange={handleForm}
-                />
-                <label htmlFor="title" className="fw-normal">
-                  Name
-                </label>
-              </div>
-            </div>
 
-            <div className="col-md-5">
-              <div className="form-floating">
-                <input
-                  type="number"
-                  placeholder=""
-                  name='mobile'
-                  className="form-control"
-                  id={`managers-${index + 1}`}
-                  onChange={handleForm}
-                />
-                <label htmlFor="title" className="fw-normal">
-                  Mobile Number
-                </label>
-              </div>
+        <h6 className="createHead mb-3">Arena Managers :</h6>
+
+        <div className="row mb-4 col-md-11">
+          <div className="col-md-2">
+            <h6 className="BuildName">Arena Manager 1 :</h6>
+          </div>
+          <div className="col-md-5">
+            <div className="form-floating">
+              <input
+                type="text"
+                placeholder="Name"
+                name="arena_manager1"
+                className="form-control"
+                onChange={handleChange}
+                value={formState['expo']?.arena_manager1 || formState['expo']?.arena_manager1Name || ''}
+              />
+              <label htmlFor="arena_manager1" className="fw-normal">
+                Name
+              </label>
             </div>
           </div>
-        ))}
+
+          <div className="col-md-5">
+            <div className="form-floating">
+              <input
+                type="number"
+                placeholder="Mobile Number"
+                name="arena_manager1Number"
+                className="form-control"
+                onChange={handleChange}
+                value={formState['expo']?.arena_manager1Number || formState['expo']?.arena_manager1Mobile || ''}
+              />
+              <label htmlFor="arena_manager1Number" className="fw-normal">
+                Mobile Number
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="row mb-4 col-md-11">
+          <div className="col-md-2">
+            <h6 className="BuildName">Arena Manager 2 :</h6>
+          </div>
+          <div className="col-md-5">
+            <div className="form-floating">
+              <input
+                type="text"
+                placeholder="Name"
+                name="arena_manager2"
+                className="form-control"
+                onChange={handleChange}
+                value={formState['expo']?.arena_manager2 || formState['expo']?.arena_manager2Name || ''}
+              />
+              <label htmlFor="arena_manager2" className="fw-normal">
+                Name
+              </label>
+            </div>
+          </div>
+
+          <div className="col-md-5">
+            <div className="form-floating">
+              <input
+                type="number"
+                placeholder="Mobile Number"
+                name="arena_manager2Number"
+                className="form-control"
+                onChange={handleChange}
+                value={formState['expo']?.arena_manager2Number || formState['expo']?.arena_manager2Mobile || ''}
+              />
+              <label htmlFor="arena_manager2Number" className="fw-normal">
+                Mobile Number
+              </label>
+            </div>
+          </div>
+        </div>
 
         <div className="row mb-4 col-md-11">
           <div className="row mt-5">

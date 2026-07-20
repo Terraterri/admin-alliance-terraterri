@@ -62,7 +62,7 @@ const FutureExpo = () => {
         }
       };
 
-      const url = `NewExpo/get.php?type=future&limit=${itemsPerPage}&skip=${(currentPage - 1)}`;
+      const url = `NewExpos/get.php?type=future&limit=${itemsPerPage}&skip=${(currentPage - 1)}`;
       const res = await expoAdminClient.get(url, config);
 
       if (res?.data?.status) {
@@ -211,9 +211,13 @@ const FutureExpo = () => {
                             onChange={(e) => setSelectedType(e.target.value)}
                           >
                             <option value="">Select Solution Type</option>
-                            {[...new Set(expos.map((expo) => expo.expoType))].map((type, index) => (
-                              <option key={index} value={type}>{type}</option>
-                            ))}
+                            {expos
+                              .filter((expo, index, self) => expo.expoType && self.findIndex((e) => e.expoType === expo.expoType) === index)
+                              .map((expo) => (
+                                <option key={expo.expoType} value={expo.expoType}>
+                                  {expo.expoTypeName || expo.expoType}
+                                </option>
+                              ))}
                           </select>
 
                           <button
@@ -238,8 +242,8 @@ const FutureExpo = () => {
                             <th>Date From</th>
                             <th>Date To</th>
                             <th>Expo Type</th>
-                            <th>Availability</th>
-                            <th>Action</th>
+                            {/* <th>Availability</th>
+                            <th>Action</th> */}
                           </tr>
                         </thead>
                         <tbody>
@@ -250,9 +254,9 @@ const FutureExpo = () => {
                                 <td className="align-middle">
                                   <span className='exp-cde'>{expo.expoUnqCode}</span>
                                   <ul className='d-flex'>
-                                    <li><Link to={`/visitors-summary/${expo.expoUnqCode}`}>Visitors</Link></li>
+                                    <li><Link to={`/visitors-summary`}>Visitors</Link></li>
                                     <li>
-                                      <Link to={`/visitors-by-expo/${expo.expoUnqCode}`}>
+                                      <Link to={`/visitors-by-expo`}>
                                         Visitor Registrations
                                       </Link>
                                     </li>
@@ -266,15 +270,15 @@ const FutureExpo = () => {
                                   {moment(expo.toDate).format("DD/MM/YYYY")}
                                 </td>
                                 <td className="align-middle">{expo.expoType}</td>
-                                <td className="align-middle">
+                                {/* <td className="align-middle">
                                   <a
                                     onClick={() => selectExpo(expo)}
                                     className='text-center primary'
                                   >
                                     View
                                   </a>
-                                </td>
-                                <td className="table-icons">
+                                </td> */}
+                                {/* <td className="table-icons">
                                   <div className="d-flex icons">
                                     <Link
                                       onClick={() => handleRedirect(expo)}
@@ -290,7 +294,7 @@ const FutureExpo = () => {
                                       <FaRegEye />
                                     </Link>
                                   </div>
-                                </td>
+                                </td> */}
                               </tr>
                             ))
                           ) : (

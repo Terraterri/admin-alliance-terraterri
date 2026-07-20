@@ -1,16 +1,34 @@
-import React from 'react';
-import MultiStep from 'react-multistep';
+import React, { useEffect } from 'react';
 import Recept from './Recept';
-import Exteriorbranding from './Exteriorbranding';
 import Interiorbranding from './Interiorbranding';
-import Expo from './Expo';
+import { useDispatch } from 'react-redux';
+import { setExpo } from '../../store/slices/ExpoSlice';
+import { expoAdminClient } from '../../utils/httpClient';
 
 const MultiStepForm = () => {
-  const steps = [
-    { title: 'Create Expo', component: <Expo /> },
-    { title: 'Create Reception', component: <Recept /> },
-    { title: 'Interior Branding', component: <Interiorbranding /> }
-  ];
+  const expoUnqCode = localStorage.getItem('expoCode');
+  const dispatch = useDispatch();
+
+  console.log("expoUnqCode", expoUnqCode)
+
+  useEffect(() => {
+    const fetchExpoByCode = async () => {
+      try {
+        const res = await expoAdminClient.get(`NewExpos/getByUnqCode.php?expoCode=${expoUnqCode}`);
+        console.log("res", res.data.data);
+
+        if (res.data.data) {
+          dispatch(setExpo(res.data.data));
+        }
+      } catch (error) {
+        console.error("Error fetching expo data:", error);
+      }
+    };
+
+    if (expoUnqCode) {
+      fetchExpoByCode();
+    }
+  }, [expoUnqCode, dispatch]);
 
   return (
     <>
@@ -25,7 +43,7 @@ const MultiStepForm = () => {
                       <li className="breadcrumb-item">
                         <a href="/">Home</a>
                       </li>
-                      <li className="breadcrumb-item active">Create Expo</li>
+                      <li className="breadcrumb-item active">Expo Configuration</li>
                     </ol>
                   </div>
                 </div>
@@ -33,14 +51,18 @@ const MultiStepForm = () => {
             </div>
             <div className="cardd">
               <div className="row">
-                <div className="col-md-12 ">
-                  <div className='multistep_out'>
-                    <MultiStep
-                      activeStep={0} prevButton={'Previous'} nextButton={'Next'} steps={steps}>
-                      <Expo title="Create Expo" />
-                      <Recept title="Reception" />
-                      <Interiorbranding title="Expo Arena" />
-                    </MultiStep>
+                <div className="col-md-12">
+                  <div className="card">
+                    <div className="card-header">
+                      <ul className="nav nav-tabs card-header-tabs">
+                        <li className="nav-item">
+                          <span className="nav-link active fw-bold">Reception &amp; Expo Arena</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="card-body p-4">
+                      <Recept />
+                    </div>
                   </div>
                 </div>
               </div>

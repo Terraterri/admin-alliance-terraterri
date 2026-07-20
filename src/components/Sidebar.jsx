@@ -35,10 +35,10 @@ const Sidebars = () => {
           label: 'Create Package',
           url: "/package/add",
         },
-        {
-          label: 'Add Source',
-          url: "/source"
-        },
+        // {
+        //   label: 'Add Source',
+        //   url: "/source"
+        // },
 
       ],
     },
@@ -53,23 +53,23 @@ const Sidebars = () => {
           label: 'OnGoing Expo',
           url: "/expo/ongoing",
         },
-        {
-          label: 'Future Expo',
-          url: "/expo/future",
-        },
+        // {
+        //   label: 'Future Expo',
+        //   url: "/expo/future",
+        // },
         {
           label: 'Completed Expo',
           url: "/expo/completed",
         },
-        {
-          label: 'Deleted Expo',
-          url: "/expo/deleted",
-        },
+        // {
+        //   label: 'Deleted Expo',
+        //   url: "/expo/deleted",
+        // },
       ],
     },
     {
       label: 'Expo Configuration',
-      url: "expo/create",
+      url: "expo-configuration",
     },
     {
       label: 'Responses',
@@ -86,11 +86,11 @@ const Sidebars = () => {
       subMenu: [
         {
           label: 'Visitor Registrations',
-          url: "/visitors-by-expo/TTInHyd2025JUN8-R",
+          url: "/visitors-by-expo",
         },
         {
           label: 'Visitor Entries',
-          url: "/visitors-summary/TTInHyd2025JUN8-R",
+          url: "/visitors-summary",
         },
         {
           label: 'Block Visitors',

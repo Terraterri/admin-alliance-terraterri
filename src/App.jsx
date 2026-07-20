@@ -24,7 +24,7 @@ function App() {
   /////////////////// Validating Existing Token   ///////////////////////
 
   const token = localStorage.getItem('adminToken');
-  console.log("Existing Admin Token:", token);
+  // console.log("Existing Admin Token:", token);
   const ValidateToken = async () => {
     try {
       const response = await expoAdminClient.post('/authLogin/verifyAdmin.php');
@@ -73,10 +73,10 @@ function App() {
           <div id="layout-wrapper">
             <ToastContainer />
             {loader && <Loader />}
-            {token && !loader && <Header />}
-            {token &&  !loader &&<Sidebar />}
+            {token != null && !loader && <Header />}
+            {token != null && !loader && <Sidebar />}
             <LazyLoad />
-            {token && !loader && <Footer />}
+            {token != null && !loader && <Footer />}
           </div>
         </IpInfoContext.Provider>
       </Provider>

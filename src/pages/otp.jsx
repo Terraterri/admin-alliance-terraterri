@@ -18,7 +18,8 @@ const Otp = (props) => {
         }
         const response = await expoAdminClient.post('/authLogin/verifyOTP.php', payload);
         if (response.data.status) {
-            localStorage.setItem('adminToken', response.data.token.token);
+            localStorage.setItem('adminToken', response.data.token);
+            localStorage.setItem('expoCode', response.data.expoCode);
             navigation('/dashboard');
         } else {
             toastError(response.data.message || "OTP is wrong");

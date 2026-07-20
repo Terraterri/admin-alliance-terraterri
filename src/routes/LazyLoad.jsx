@@ -87,7 +87,7 @@ const LazyLoad = () => {
           <Route path="/expo-banner" element={<ExpoBanImage />} />
           <Route path="/package/add" element={<CreatePackage />} />
           <Route path="/source" element={<Source />} />
-          <Route path="/expo/create" element={<MultiStepForm />} />
+          <Route path="/expo-configuration" element={<MultiStepForm />} />
           <Route path="/expo/create/:expoUnqCode" element={<MultiStepForm />} />
           <Route path="/expo/ongoing" element={<OnGoingExpo />} />
           <Route path="/expo/future" element={<FutureExpo />} />
@@ -106,9 +106,9 @@ const LazyLoad = () => {
 
           <Route path='/block-number' element={<BlockNumber />} />
 
-          <Route path="/visitors-summary/:expoUnqCode" element={<NoofVisitors />} />
+          <Route path="/visitors-summary" element={<NoofVisitors />} />
 
-          <Route path="/visitors-by-expo/:expoUnqCode" element={<NoofVisitorReg />} />
+          <Route path="/visitors-by-expo" element={<NoofVisitorReg />} />
 
 
 

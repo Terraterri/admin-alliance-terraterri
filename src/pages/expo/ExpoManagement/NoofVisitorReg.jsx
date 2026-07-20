@@ -35,9 +35,16 @@ const NoofVisitorReg = () => {
 
   const fetchExpoData = async (url) => {
     setLoading(true);
+    console.log(localStorage.getItem("adminToken"))
+    console.log(localStorage.getItem("expoCode"))
     try {
       const res = await expoAdminClient.get(
-        `${url}?expoId=${expoUnqCode}&limit=${itemsPerPage}&skip=${currentPage - 1}`,
+        `${url}?expoCode=${localStorage.getItem("expoCode")}&limit=${itemsPerPage}&skip=${currentPage - 1}`,
+        {
+          headers: {
+            "authorization": localStorage.getItem("adminToken")
+          }
+        }
       );
 
       if (res?.data?.status) {
@@ -64,7 +71,7 @@ const NoofVisitorReg = () => {
 
   useEffect(() => {
     fetchUsersData();
-  }, [expoUnqCode, currentPage, tabType]);
+  }, [currentPage, tabType]);
 
 
   return (
@@ -108,22 +115,22 @@ const NoofVisitorReg = () => {
               <div className="row justify-content-center">
                 <div className="col-md-12">
                   <form className="custom-validation mb-3 cutom_date" action="#">
-    <div className="row align-items-center">
-        <div className="col-md-3 mt-3">
-            <div className="">
-                <div className="form-floating"><input type="date" id="from-date" className="form-control" name="fromdate" /><label
-                        for="from-date" className="fw-normal">From Date</label></div>
-            </div>
-        </div>
-        <div className="col-md-3 mt-3">
-            <div className="">
-                <div className="form-floating"><input type="date" id="to-date" className="form-control" name="todate" /><label
-                        for="to-date" className="fw-normal">To Date</label></div>
-            </div>
-        </div>
-        <div className="col-md-1 mt-3"><button className="btn btn-primary" type="submit">Search</button></div>
-    </div>
-</form>
+                    <div className="row align-items-center">
+                      <div className="col-md-3 mt-3">
+                        <div className="">
+                          <div className="form-floating"><input type="date" id="from-date" className="form-control" name="fromdate" /><label
+                            for="from-date" className="fw-normal">From Date</label></div>
+                        </div>
+                      </div>
+                      <div className="col-md-3 mt-3">
+                        <div className="">
+                          <div className="form-floating"><input type="date" id="to-date" className="form-control" name="todate" /><label
+                            for="to-date" className="fw-normal">To Date</label></div>
+                        </div>
+                      </div>
+                      <div className="col-md-1 mt-3"><button className="btn btn-primary" type="submit">Search</button></div>
+                    </div>
+                  </form>
 
 
                   <div className="card">

@@ -43,7 +43,7 @@ const CompletedExpo = () => {
         }
       };
 
-      const url = `NewExpo/get.php?type=completed&limit=${itemsPerPage}&skip=${(currentPage - 1) * itemsPerPage}`;
+      const url = `NewExpos/get.php?type=completed&limit=${itemsPerPage}&skip=${(currentPage - 1) * itemsPerPage}`;
       const res = await expoAdminClient.get(url, config);
 
       if (res?.data?.status) {
@@ -195,9 +195,13 @@ const CompletedExpo = () => {
                             onChange={(e) => setSelectedType(e.target.value)}
                           >
                             <option value="">Select Solution Type</option>
-                            {[...new Set(expos.map((expo) => expo.expoType))].map((type, index) => (
-                              <option key={index} value={type}>{type}</option>
-                            ))}
+                            {expos
+                              .filter((expo, index, self) => expo.expoType && self.findIndex((e) => e.expoType === expo.expoType) === index)
+                              .map((expo) => (
+                                <option key={expo.expoType} value={expo.expoType}>
+                                  {expo.expoTypeName || expo.expoType}
+                                </option>
+                              ))}
                           </select>
 
                           <button
@@ -222,8 +226,8 @@ const CompletedExpo = () => {
                             <th>Date From</th>
                             <th>Date To</th>
                             <th>Expo Type</th>
-                            <th>Availability</th>
-                            <th>Action</th>
+                            {/* <th>Availability</th>
+                            <th>Action</th> */}
                           </tr>
                         </thead>
                         <tbody>
@@ -234,7 +238,7 @@ const CompletedExpo = () => {
                                 <td className="align-middle">
                                   <span className='exp-cde'>{expo.expoUnqCode}</span>
                                   <ul className='d-flex'>
-                                    <li><Link to={`/visitors-by-expo/${expo.expoUnqCode}`}>Visitor Registrations</Link></li>
+                                    <li><Link to={`/visitors-by-expo`}>Visitor Registrations</Link></li>
                                     <li><Link to="/visitors-summary">Visitors</Link></li>
                                     <li><Link to="/builderparticipate">Exhibitors</Link></li>
                                   </ul>
@@ -246,16 +250,16 @@ const CompletedExpo = () => {
                                 <td className="align-middle">
                                   {moment(expo.toDate).format("DD/MM/YYYY")}
                                 </td>
-                                <td className="align-middle">{expo.expoType}</td>
-                                <td className="align-middle">
+                                <td className="align-middle">{expo.expoTypeName}</td>
+                                {/* <td className="align-middle">
                                   <a
                                     onClick={() => selectExpo(expo)}
                                     className='text-center primary'
                                   >
                                     View
                                   </a>
-                                </td>
-                                <td className="table-icons">
+                                </td> */}
+                                {/* <td className="table-icons">
                                   <div className="d-flex icons">
                                     <Link
                                       onClick={() => handleRedirect(expo)}
@@ -271,7 +275,7 @@ const CompletedExpo = () => {
                                       <FaRegEye />
                                     </Link>
                                   </div>
-                                </td>
+                                </td> */}
                               </tr>
                             ))
                           ) : (
