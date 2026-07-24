@@ -4,12 +4,14 @@ import Interiorbranding from './Interiorbranding';
 import { useDispatch } from 'react-redux';
 import { setExpo } from '../../store/slices/ExpoSlice';
 import { expoAdminClient } from '../../utils/httpClient';
+import { useParams } from 'react-router-dom';
 
 const MultiStepForm = () => {
-  const expoUnqCode = localStorage.getItem('expoCode');
+  const { expoUnqCode: paramExpoCode } = useParams();
+  const expoUnqCode = paramExpoCode || localStorage.getItem('expoCode');
   const dispatch = useDispatch();
 
-  console.log("expoUnqCode", expoUnqCode)
+  console.log("expoUnqCode", expoUnqCode);
 
   useEffect(() => {
     const fetchExpoByCode = async () => {

@@ -188,9 +188,11 @@ const Recept = () => {
 
       if (res?.data?.status) {
         toastSuccess(res?.data?.message || 'Expo saved successfully');
-        dispatchFormData(clearExpo());
-
-        //navigate(`/expo/create`);
+        const updatedExpoData = res?.data?.data ? res.data.data : payload;
+        dispatchFormData(setExpo(updatedExpoData));
+        if (code) {
+          localStorage.setItem('expoCode', code);
+        }
       } else {
         toastError(res?.data?.message || 'Failed to save expo');
       }
@@ -205,7 +207,7 @@ const Recept = () => {
   return (
     <>
       {loading && <Loader />}
-      <form>
+      <form onSubmit={(e) => { e.preventDefault(); submitExpo(); }}>
         <h6 className="createHead mb-4">Receptionists : </h6>
 
         <div className="row mb-4">
@@ -373,7 +375,7 @@ const Recept = () => {
 
             {formErr.exteriorStandiesL1 && <p className="err">{formErr.exteriorStandiesL1}</p>}
 
-            {formState['expo']?.exteriorBannersL1 !== undefined &&
+            {Boolean(formState['expo']?.exteriorBannersL1) &&
               <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                 <source src={formState['expo']?.exteriorBannersL1} type="video/mp4" />
                 <track
@@ -403,7 +405,7 @@ const Recept = () => {
 
             {formErr.exteriorStandiesL2 && <p className="err">{formErr.exteriorStandiesL2}</p>}
 
-            {formState['expo']?.exteriorBannersL2 !== undefined &&
+            {Boolean(formState['expo']?.exteriorBannersL2) &&
               <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                 <source src={formState['expo']?.exteriorBannersL2} type="video/mp4" />
                 <track
@@ -430,7 +432,7 @@ const Recept = () => {
               </label>
             </div>
             {formErr.exteriorStandiesL3 && <p className="err">{formErr.exteriorStandiesL3}</p>}
-            {formState['expo']?.exteriorBannersL3 !== undefined &&
+            {Boolean(formState['expo']?.exteriorBannersL3) &&
               <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                 <source src={formState['expo']?.exteriorBannersL3} type="video/mp4" />
                 <track
@@ -458,7 +460,7 @@ const Recept = () => {
               <label htmlFor="project-type" className="fw-normal">
                 Video 1{' '}
               </label>
-              {formState['expo']?.exteriorBannersR1 !== undefined &&
+              {Boolean(formState['expo']?.exteriorBannersR1) &&
                 <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                   <source src={formState['expo']?.exteriorBannersR1} type="video/mp4" />
                   <track
@@ -488,7 +490,7 @@ const Recept = () => {
             </div>
             {formErr.exteriorStandiesR2 && <p className="err">{formErr.exteriorStandiesR2}</p>}
 
-            {formState['expo']?.exteriorBannersR2 !== undefined &&
+            {Boolean(formState['expo']?.exteriorBannersR2) &&
               <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                 <source src={formState['expo']?.exteriorBannersR2} type="video/mp4" />
                 <track
@@ -514,7 +516,7 @@ const Recept = () => {
                 Video 3{' '}
               </label>
 
-              {formState['expo']?.exteriorBannersR3 !== undefined &&
+              {Boolean(formState['expo']?.exteriorBannersR3) &&
                 <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                   <source src={formState['expo']?.exteriorBannersR3} type="video/mp4" />
                   <track
@@ -541,7 +543,7 @@ const Recept = () => {
               <label htmlFor="project-type" className="fw-normal">
                 Video 4{' '}
               </label>
-              {formState['expo']?.exteriorBannersR4 !== undefined &&
+              {Boolean(formState['expo']?.exteriorBannersR4) &&
                 <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                   <source src={formState['expo']?.exteriorBannersR4} type="video/mp4" />
                   <track
@@ -575,7 +577,7 @@ const Recept = () => {
               <label htmlFor="project-type" className="fw-normal">
                 Video 1{' '}
               </label>
-              {formState['expo']?.auditoriumEntranceL1 !== undefined &&
+              {Boolean(formState['expo']?.auditoriumEntranceL1) &&
                 <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                   <source src={formState['expo']?.auditoriumEntranceL1} type="video/mp4" />
                   <track
@@ -602,7 +604,7 @@ const Recept = () => {
               <label htmlFor="project-type" className="fw-normal">
                 Video 2{' '}
               </label>
-              {formState['expo']?.auditoriumEntranceL2 !== undefined &&
+              {Boolean(formState['expo']?.auditoriumEntranceL2) &&
                 <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                   <source src={formState['expo']?.auditoriumEntranceL2} type="video/mp4" />
                   <track
@@ -628,7 +630,7 @@ const Recept = () => {
               <label htmlFor="project-type" className="fw-normal">
                 Image 3{' '}
               </label>
-              {formState['expo']?.auditoriumEntranceL3 !== undefined &&
+              {Boolean(formState['expo']?.auditoriumEntranceL3) &&
                 <video width="100%" autoPlay loop preload="auto" muted className='mt-3'>
                   <source src={formState['expo']?.auditoriumEntranceL3} type="video/mp4" />
                   <track
@@ -662,7 +664,7 @@ const Recept = () => {
         <div className="row mb-4 col-md-11">
           <div className="row mt-5">
             <div className="btn-subb mb-5">
-              <button type="button" className="save" onClick={submitExpo}>
+              <button type="submit" className="save">
                 Save
               </button>
             </div>

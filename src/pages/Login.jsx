@@ -16,9 +16,9 @@ const Login = () => {
     const handleChange = (e) => {
         setLoginForm({ ...loginForm, [e.target.name]: e.target.value });
     }
-    useEffect(() => {
-        localStorage.clear()
-    }, [])
+    // useEffect(() => {
+    //     localStorage.clear()
+    // }, [])
     const validateForm = () => {
         let errors = {};
         let formIsValid = true;

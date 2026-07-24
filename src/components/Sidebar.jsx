@@ -31,10 +31,10 @@ const Sidebars = () => {
           label: 'Expo Banner Image',
           url: "/expo-banner",
         },
-        {
-          label: 'Create Package',
-          url: "/package/add",
-        },
+        // {
+        //   label: 'Create Package',
+        //   url: "/package/add",
+        // },
         // {
         //   label: 'Add Source',
         //   url: "/source"

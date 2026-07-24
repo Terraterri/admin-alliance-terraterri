@@ -27,20 +27,24 @@ function App() {
   // console.log("Existing Admin Token:", token);
   const ValidateToken = async () => {
     try {
+      setLoader(true);
       const response = await expoAdminClient.post('/authLogin/verifyAdmin.php');
       if (response.data.status) {
-        if (location.pathname == '/') {
+        if (location.pathname === '/') {
           navigate('/dashboard');
-        } else {
-          navigate(location.pathname)
         }
       } else {
-        // navigate('/');
-        // localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminToken');
+        if (location.pathname !== '/') {
+          navigate('/');
+        }
       }
     } catch (err) {
-      console.log(err);
-      navigate('/');
+      console.log('Token verification error:', err);
+      localStorage.removeItem('adminToken');
+      if (location.pathname !== '/') {
+        navigate('/');
+      }
     } finally {
       setLoader(false);
     }
@@ -59,11 +63,11 @@ function App() {
 
   useEffect(() => {
     if (token) {
-      setLoader(true);
       ValidateToken();
       getIpInfo();
+    } else {
+      setLoader(false);
     }
-    setLoader(false);
   }, []);
 
   return (
@@ -73,10 +77,14 @@ function App() {
           <div id="layout-wrapper">
             <ToastContainer />
             {loader && <Loader />}
-            {token != null && !loader && <Header />}
-            {token != null && !loader && <Sidebar />}
-            <LazyLoad />
-            {token != null && !loader && <Footer />}
+            {!loader && (
+              <>
+                {localStorage.getItem('adminToken') != null && <Header />}
+                {localStorage.getItem('adminToken') != null && <Sidebar />}
+                <LazyLoad />
+                {localStorage.getItem('adminToken') != null && <Footer />}
+              </>
+            )}
           </div>
         </IpInfoContext.Provider>
       </Provider>
