@@ -32,11 +32,26 @@ const NoofVisitors = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchExpoVisitors = async () => {
+  // Filter states
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+
+  const fetchExpoVisitors = async (overrideFilters = null) => {
     setLoading(true);
+    const fDate = overrideFilters && 'fromDate' in overrideFilters ? overrideFilters.fromDate : fromDate;
+    const tDate = overrideFilters && 'toDate' in overrideFilters ? overrideFilters.toDate : toDate;
+
     try {
+      let url = `expoUserAnalytics/expo/get.php?expoId=${localStorage.getItem("expoCode")}&limit=${itemsPerPage}&skip=${currentPage - 1}`;
+      if (fDate) {
+        url += `&fromDate=${encodeURIComponent(fDate)}`;
+      }
+      if (tDate) {
+        url += `&toDate=${encodeURIComponent(tDate)}`;
+      }
+
       const res = await expoAdminClient.get(
-        `expoUserAnalytics/expo/get.php?expoId=${localStorage.getItem("expoCode")}&limit=${itemsPerPage}&skip=${currentPage - 1}`,
+        url,
         {
           headers: {
             "authorization": localStorage.getItem("adminToken")
@@ -45,25 +60,66 @@ const NoofVisitors = () => {
       );
 
       if (res?.data?.status) {
-        setExpoVisitors(res.data.data || []);
-        setTotalPages(Math.ceil(res.data.count / itemsPerPage))
+        let visitors = res.data.data || [];
+
+        // Fallback client-side filtering if backend returns unfiltered data
+        if (fDate) {
+          const from = new Date(fDate);
+          from.setHours(0, 0, 0, 0);
+          visitors = visitors.filter(item => {
+            const itemDateStr = item.created_at || item.date || item.joined_at;
+            if (!itemDateStr) return true;
+            const parsed = new Date(itemDateStr);
+            return !isNaN(parsed) ? parsed >= from : true;
+          });
+        }
+        if (tDate) {
+          const to = new Date(tDate);
+          to.setHours(23, 59, 59, 999);
+          visitors = visitors.filter(item => {
+            const itemDateStr = item.created_at || item.date || item.joined_at;
+            if (!itemDateStr) return true;
+            const parsed = new Date(itemDateStr);
+            return !isNaN(parsed) ? parsed <= to : true;
+          });
+        }
+
+        setExpoVisitors(visitors);
+        setTotalPages(Math.ceil((res.data.count || visitors.length) / itemsPerPage) || 1);
       } else {
         setExpoVisitors([]);
+        setTotalPages(1);
       }
     } catch (error) {
       setExpoVisitors([]);
-
       console.error("Error fetching data:", error);
-      // toastError("Failed to fetch visitor registrations.");
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => {
     fetchExpoVisitors();
   }, [expoUnqCode, currentPage]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchExpoVisitors();
+    }
+  };
+
+  const handleReset = () => {
+    setFromDate('');
+    setToDate('');
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchExpoVisitors({ fromDate: '', toDate: '' });
+    }
+  };
 
   return (
     <>
@@ -87,21 +143,42 @@ const NoofVisitors = () => {
             </div>
 
             <div className="row justify-content-center">
-              <form className="custom-validation mb-3" action="#">
+              <form className="custom-validation mb-3" onSubmit={handleSearch}>
                 <div className="row align-items-center">
                   <div className="col-md-3 mt-3">
                     <div className="">
-                      <div className="form-floating"><input type="date" id="from-date" className="form-control" name="fromdate" /><label
-                        for="from-date" className="fw-normal">From Date</label></div>
+                      <div className="form-floating">
+                        <input
+                          type="date"
+                          id="from-date"
+                          className="form-control"
+                          name="fromdate"
+                          value={fromDate}
+                          onChange={(e) => setFromDate(e.target.value)}
+                        />
+                        <label htmlFor="from-date" className="fw-normal">From Date</label>
+                      </div>
                     </div>
                   </div>
                   <div className="col-md-3 mt-3">
                     <div className="">
-                      <div className="form-floating"><input type="date" id="to-date" className="form-control" name="todate" /><label
-                        for="to-date" className="fw-normal">To Date</label></div>
+                      <div className="form-floating">
+                        <input
+                          type="date"
+                          id="to-date"
+                          className="form-control"
+                          name="todate"
+                          value={toDate}
+                          onChange={(e) => setToDate(e.target.value)}
+                        />
+                        <label htmlFor="to-date" className="fw-normal">To Date</label>
+                      </div>
                     </div>
                   </div>
-                  <div className="col-md-1 mt-3"><button className="btn btn-primary" type="submit">Search</button></div>
+                  <div className="col-md-3 mt-3 d-flex gap-2">
+                    <button className="btn btn-primary" type="submit">Search</button>
+                    <button className="btn btn-secondary" type="button" onClick={handleReset}>Reset</button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -110,7 +187,7 @@ const NoofVisitors = () => {
                 <div className="card">
                   <div className="card-header">
                     <h3 className="card-title">No of Visitors</h3>
-                    <h3 className="card-title">Day 1</h3>
+                    {/* <h3 className="card-title">Day 1</h3> */}
                   </div>
                   <div className="card-body">
                     <div className="table-responsive-md">
@@ -119,12 +196,12 @@ const NoofVisitors = () => {
                           <tr>
                             <th>S.no</th>
                             <th>Visitor Name</th>
-                            <th>Source Name</th>
+                            {/* <th>Source Name</th> */}
                             <th>Mobile Number</th>
                             <th>Email Id</th>
-                            <th>Joined On</th>
-                            <th>Stall ID</th>
-                            <th>Exhibitor Name</th>
+                            <th>Visited at</th>
+                            {/* <th>Stall ID</th>
+                            <th>Exhibitor Name</th> */}
                           </tr>
                         </thead>
                         <tbody>
@@ -138,12 +215,12 @@ const NoofVisitors = () => {
                               <tr key={idx}>
                                 <td>{((currentPage - 1) * 10) + idx + 1}</td>
                                 <td>{ele.name}</td>
-                                <td>N/A</td>
+                                {/* <td>N/A</td> */}
                                 <td>{ele.number}</td>
                                 <td>{ele.email}</td>
                                 <td>{ele.joined_at}</td>
-                                <td>
-                                  <span className='icons_list'>
+                                {/*  <td>
+                                <span className='icons_list'>
                                     <Button variant="primary" onClick={handleShow} className='listin_btn'><FaFileDownload />
                                     </Button>
                                     <Button variant="primary" onClick={handleWhatsapp} className='listin_btn'><MdWhatsapp />
@@ -152,9 +229,15 @@ const NoofVisitors = () => {
                                     </Button>
                                     <Button variant="primary" onClick={setDropMessageShow} className='listin_btn'><RiMessage2Fill />
                                     </Button>
-                                  </span>
+                                  </span> 
                                 </td>
-                                <td> <span className='sta_iconn'><Button variant="primary" onClick={setCommentShow} className='listin_btn'><GoEye /></Button></span></td>
+                                {/* <td>
+                                  {ele.stallId ? (
+                                    <span className='sta_iconn'><Button variant="primary" onClick={setCommentShow} className='listin_btn'><GoEye /></Button></span>
+                                  ) : (
+                                    "N/A"
+                                  )}
+                                </td> */}
                               </tr>
                             )))
                           }

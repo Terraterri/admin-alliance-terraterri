@@ -73,42 +73,42 @@ const ExpoDashboard = () => {
                                   <Link to="/expo/ongoing">
                                     <p>OnGoing Expo</p>
                                   </Link>
-                                  <h3>{allCount?.onGoingExpos}</h3>
+                                  <h3>{allCount?.currentUserOngoingExpos}</h3>
                                 </div>
                               </div>
                             </li>
-                              <li className="col-md-4">
-                            <div className="ad-hom-box ad-hom-box-1">
-                              <span className="ad-hom-col-com ad-hom-col-1">
-                                <img src="/assets/images/visitor.svg" alt="" width={50} />
-                              </span>
-                              <div className="ad-hom-view-com1">
-                                <Link to="/visitors-summary">
-                                  <p>Total No.of Visitors</p>
-                                </Link>
-                                <h3>{allCount?.visitorsCount}</h3>
+                            <li className="col-md-4">
+                              <div className="ad-hom-box ad-hom-box-1">
+                                <span className="ad-hom-col-com ad-hom-col-1">
+                                  <img src="/assets/images/visitor.svg" alt="" width={50} />
+                                </span>
+                                <div className="ad-hom-view-com1">
+                                  <Link to="/visitors-summary">
+                                    <p>Total No.of Visitors</p>
+                                  </Link>
+                                  <h3>{allCount?.currentUserExpoVisitorsCount}</h3>
+                                </div>
                               </div>
-                            </div>
-                          </li>
-                          <li className="col-md-4">
-                            <div className="ad-hom-box ad-had-hom-box-1">
-                              <span className="ad-hom-col-com ad-hom-col-1">
-                                <img src="/assets/images/exibitors.svg" alt="" width={50} />
-                              </span>
-                              <div className="ad-hom-view-com1">
-                                <Link to="/builderparticipate">
-                                  <p>Total No.of Exhibitors</p>
-                                </Link>
-                                <h3>{allCount?.exhibitorsCount}</h3>
+                            </li>
+                            <li className="col-md-4">
+                              <div className="ad-hom-box ad-had-hom-box-1">
+                                <span className="ad-hom-col-com ad-hom-col-1">
+                                  <img src="/assets/images/exibitors.svg" alt="" width={50} />
+                                </span>
+                                <div className="ad-hom-view-com1">
+                                  <Link to="/builderparticipate">
+                                    <p>Total No.of Exhibitors</p>
+                                  </Link>
+                                  <h3>{allCount?.currentUserBuildersCount}</h3>
+                                </div>
                               </div>
-                            </div>
-                          </li>
-                          
+                            </li>
+
                           </div>
                         </ul>
                       </div>
                     </div>
-{/* 
+                    {/* 
                     <div className="ad-v2-hom-info-inn1">
                       <ul className="Homesb1 p-0">
                         <div className="row row justify-content-center">

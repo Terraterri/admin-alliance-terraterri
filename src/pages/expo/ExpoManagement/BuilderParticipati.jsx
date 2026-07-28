@@ -57,8 +57,11 @@ const BuilderParticipati = () => {
   };
 
   // Fetch Participating Builders / Stall Bookings from API
-  const fetchBuildersData = async () => {
+  const fetchBuildersData = async (overrideFilters = null) => {
     setLoading(true);
+    const fDate = overrideFilters && 'fromDate' in overrideFilters ? overrideFilters.fromDate : fromDate;
+    const tDate = overrideFilters && 'toDate' in overrideFilters ? overrideFilters.toDate : toDate;
+
     try {
       const config = {
         headers: {
@@ -76,17 +79,37 @@ const BuilderParticipati = () => {
       if (activeExpoCode) {
         url += `&id=${activeExpoCode}`;
       }
+      if (fDate) {
+        url += `&fromDate=${encodeURIComponent(fDate)}`;
+      }
+      if (tDate) {
+        url += `&toDate=${encodeURIComponent(tDate)}`;
+      }
 
       const res = await expoAdminClient.get(url, config);
 
       if (res?.data?.status) {
         let data = res.data.data || [];
 
-        if (fromDate) {
-          data = data.filter((item) => new Date(item.created_at || item.date) >= new Date(fromDate));
+        if (fDate) {
+          const from = new Date(fDate);
+          from.setHours(0, 0, 0, 0);
+          data = data.filter((item) => {
+            const itemDateStr = item.created_at || item.date || item.joined_at;
+            if (!itemDateStr) return true;
+            const parsed = new Date(itemDateStr);
+            return !isNaN(parsed) ? parsed >= from : true;
+          });
         }
-        if (toDate) {
-          data = data.filter((item) => new Date(item.created_at || item.date) <= new Date(toDate));
+        if (tDate) {
+          const to = new Date(tDate);
+          to.setHours(23, 59, 59, 999);
+          data = data.filter((item) => {
+            const itemDateStr = item.created_at || item.date || item.joined_at;
+            if (!itemDateStr) return true;
+            const parsed = new Date(itemDateStr);
+            return !isNaN(parsed) ? parsed <= to : true;
+          });
         }
 
         setBuildersData(data);
@@ -110,8 +133,65 @@ const BuilderParticipati = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setCurrentPage(1);
-    fetchBuildersData();
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchBuildersData();
+    }
+  };
+
+  const handleReset = () => {
+    setFromDate('');
+    setToDate('');
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      fetchBuildersData({ fromDate: '', toDate: '' });
+    }
+  };
+
+  const extractVisitors = (data) => {
+    let list = [];
+    if (!data) return list;
+
+    if (Array.isArray(data)) {
+      data.forEach((item) => {
+        if (item.users && Array.isArray(item.users)) {
+          item.users.forEach((u) => {
+            list.push({
+              ...u,
+              executiveName: item.executive_name || item.executiveName || item.executive || '-',
+              visitedDate: item.date || item.joined_at || '-'
+            });
+          });
+        } else {
+          list.push(item);
+        }
+      });
+      return list;
+    }
+
+    if (typeof data === 'object') {
+      Object.entries(data).forEach(([dateStr, execItems]) => {
+        if (Array.isArray(execItems)) {
+          execItems.forEach((execItem) => {
+            const execName = execItem.executive_name || execItem.executiveName || execItem.executive || '-';
+            if (Array.isArray(execItem.users)) {
+              execItem.users.forEach((u) => {
+                list.push({
+                  ...u,
+                  executiveName: execName,
+                  visitedDate: dateStr,
+                  visitedTime: u.joined_at || u.created_at || u.time || ''
+                });
+              });
+            }
+          });
+        }
+      });
+    }
+
+    return list;
   };
 
   const handleShowVisitors = async (stallItem) => {
@@ -128,23 +208,24 @@ const BuilderParticipati = () => {
 
       const stallCode = stallItem.stallUnqCode || stallItem.stall_unq_code || stallItem.stallCode;
       const activeExpoCode = expoCode || localStorage.getItem('expoCode');
-
+      const stallInfoId = stallItem.stallInfoId;
       const res = await expoAdminClient.get(
-        `expoUserAnalytics/expo/get.php?expoId=${activeExpoCode}&stallCode=${stallCode}`,
+        `tt-expo-builder-be/expoAnalytics/getStallCustomers.php?expoCode=${activeExpoCode}&stallId=${stallInfoId}`,
         config
       );
 
-      if (res?.data?.status) {
-        setStallVisitors(res.data.data || []);
+      if (res?.data?.success || res?.data?.status) {
+        const parsedVisitors = extractVisitors(res.data.data);
+        setStallVisitors(parsedVisitors);
       } else if (Array.isArray(stallItem.visitors)) {
-        setStallVisitors(stallItem.visitors);
+        setStallVisitors(extractVisitors(stallItem.visitors));
       } else {
         setStallVisitors([]);
       }
     } catch (error) {
       console.error('Error fetching stall visitors:', error);
       if (Array.isArray(stallItem.visitors)) {
-        setStallVisitors(stallItem.visitors);
+        setStallVisitors(extractVisitors(stallItem.visitors));
       } else {
         setStallVisitors([]);
       }
@@ -202,8 +283,9 @@ const BuilderParticipati = () => {
                     <label htmlFor="to-date" className="fw-normal">To Date</label>
                   </div>
                 </div>
-                <div className="col-md-2 mt-3">
+                <div className="col-md-3 mt-3 d-flex gap-2">
                   <button className="btn btn-primary" type="submit">Search</button>
+                  <button className="btn btn-secondary" type="button" onClick={handleReset}>Reset</button>
                 </div>
               </div>
             </form>
@@ -291,7 +373,7 @@ const BuilderParticipati = () => {
                             <th>Mobile Number</th>
                             <th>Email Id</th>
                             <th>Executive</th>
-                            <th>Activity</th>
+                            <th>Visited Date & Time</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -304,10 +386,14 @@ const BuilderParticipati = () => {
                               <tr key={index}>
                                 <td>{index + 1}</td>
                                 <td>{visitor.name || visitor.userName || visitor.visitor_name || '-'}</td>
-                                <td>{visitor.mobile || visitor.userMobile || visitor.number || '-'}</td>
+                                <td>{visitor.number || visitor.mobile || visitor.userMobile || '-'}</td>
                                 <td>{visitor.email || visitor.userEmail || '-'}</td>
-                                <td>{visitor.executiveName || visitor.executive || '-'}</td>
-                                <td>{visitor.activity || visitor.action || 'Visited'}</td>
+                                <td>{visitor.executiveName || visitor.executive_name || visitor.executive || '-'}</td>
+                                <td>
+                                  {visitor.visitedDate && visitor.visitedTime
+                                    ? `${visitor.visitedDate} ${visitor.visitedTime}`
+                                    : visitor.visitedDate || visitor.joined_at || visitor.visited_at || '-'}
+                                </td>
                               </tr>
                             ))
                           ) : (

@@ -248,7 +248,7 @@ const OnGoingExpo = () => {
                                 <td className="align-middle">
                                   {moment(expo.toDate).format("DD/MM/YYYY")}
                                 </td>
-                                <td className="align-middle">{expo.expoTypeName}</td>
+                                <td className="align-middle">{expo.expoType}</td>
                                 {/* <td className="align-middle">
                                   <a
                                     onClick={() => selectExpo(expo)}

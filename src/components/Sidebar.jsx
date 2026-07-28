@@ -12,36 +12,36 @@ const Sidebars = () => {
       className: 'active',
     },
 
-    {
-      label: 'Expo Master',
-      subMenu: [
-        // {
-        //   label: 'Expo Type',
-        //   url: "/expo/type",
-        // },
-        // {
-        //   label: 'Country Master',
-        //   url: "/masters/country",
-        // },
-        // {
-        //   label: 'City Master',
-        //   url: "/masters/city",
-        // },
-        {
-          label: 'Expo Banner Image',
-          url: "/expo-banner",
-        },
-        // {
-        //   label: 'Create Package',
-        //   url: "/package/add",
-        // },
-        // {
-        //   label: 'Add Source',
-        //   url: "/source"
-        // },
+    // {
+    //   label: 'Expo Master',
+    //   subMenu: [
+    //     // {
+    //     //   label: 'Expo Type',
+    //     //   url: "/expo/type",
+    //     // },
+    //     // {
+    //     //   label: 'Country Master',
+    //     //   url: "/masters/country",
+    //     // },
+    //     // {
+    //     //   label: 'City Master',
+    //     //   url: "/masters/city",
+    //     // },
+    //     {
+    //       label: 'Expo Banner Image',
+    //       url: "/expo-banner",
+    //     },
+    //     {
+    //       label: 'Create Package',
+    //       url: "/package/add",
+    //     },
+    //     // {
+    //     //   label: 'Add Source',
+    //     //   url: "/source"
+    //     // },
 
-      ],
-    },
+    //   ],
+    // },
     {
       label: 'Expo Management',
       subMenu: [
@@ -71,10 +71,10 @@ const Sidebars = () => {
       label: 'Expo Configuration',
       url: "expo-configuration",
     },
-    {
-      label: 'Responses',
-      url: "/connect-inquiries",
-    },
+    // {
+    //   label: 'Responses',
+    //   url: "/connect-inquiries",
+    // },
 
     {
       label: 'Exhibitors Management',
