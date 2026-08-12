@@ -21,13 +21,20 @@ const createClient = (baseURL) => {
   return client;
 };
 
+// Base URLs — injected at build time via VITE_* (see the Dockerfile build args),
+// falling back to the PROD endpoints so a build with no args behaves exactly as before.
+const USER_ENDPOINT = import.meta.env.VITE_USER_ENDPOINT || 'https://micro-api-one.terraterri.com';
+const MASTERS_ENDPOINT = import.meta.env.VITE_MASTERS_ENDPOINT || 'https://micro-api-three.terraterri.com';
+const SERVICES_ENDPOINT = import.meta.env.VITE_SERVICES_ENDPOINT || 'https://micro-api-two.terraterri.com';
+const EXPOADMIN_ENDPOINT = (import.meta.env.VITE_EXPOADMIN_ENDPOINT || 'https://expoadminapi.terraterri.com').replace(/\/$/, '');
+
 // Create API clients
-const authClient = createClient(`https://micro-api-one.terraterri.com/api`);
-const masterClient = createClient(`https://micro-api-three.terraterri.com/api/`);
-const projectClient = createClient(`https://micro-api-two.terraterri.com/api/project/`);
+const authClient = createClient(`${USER_ENDPOINT}/api`);
+const masterClient = createClient(`${MASTERS_ENDPOINT}/api/`);
+const projectClient = createClient(`${SERVICES_ENDPOINT}/api/project/`);
 const expoClient = createClient(`https://mmworkspace.com/expo/api/`);
-const expoAdminClient = createClient(`https://expoadminapi.terraterri.com/`)
-const expoApiClient = createClient(`https://expoadminapi.terraterri.com/tt-expo-builder-be/`)
+const expoAdminClient = createClient(`${EXPOADMIN_ENDPOINT}/`)
+const expoApiClient = createClient(`${EXPOADMIN_ENDPOINT}/tt-expo-builder-be/`)
 
 // const authClient = axios.create({
 //   baseURL: 'https://micro-api-one.terraterri.com/api',

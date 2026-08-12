@@ -8,6 +8,19 @@ RUN npm ci
 
 # Copy the rest of the code and build
 COPY . .
+
+# Per-environment endpoints injected at build time via --build-arg (read in
+# src/utils/httpClient.js). Defaults are the PROD URLs so the existing prod
+# pipeline (which passes no build-args) is unaffected.
+ARG VITE_USER_ENDPOINT=https://micro-api-one.terraterri.com
+ARG VITE_SERVICES_ENDPOINT=https://micro-api-two.terraterri.com
+ARG VITE_MASTERS_ENDPOINT=https://micro-api-three.terraterri.com
+ARG VITE_EXPOADMIN_ENDPOINT=https://expoadminapi.terraterri.com
+ENV VITE_USER_ENDPOINT=$VITE_USER_ENDPOINT
+ENV VITE_SERVICES_ENDPOINT=$VITE_SERVICES_ENDPOINT
+ENV VITE_MASTERS_ENDPOINT=$VITE_MASTERS_ENDPOINT
+ENV VITE_EXPOADMIN_ENDPOINT=$VITE_EXPOADMIN_ENDPOINT
+
 RUN npm run build
 
 FROM nginx:alpine

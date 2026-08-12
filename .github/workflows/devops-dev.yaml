@@ -1,0 +1,53 @@
+name: devops-dev (deploy to Cloud Run dev)
+
+on:
+  push:
+    branches: [devops-dev]
+  workflow_dispatch: {}
+
+env:
+  SERVICE: dev-admin-alliance
+  IMAGE: admin-alliance:dev
+  DOCKERFILE: Dockerfile
+  PROJECT_ID: terraterri-454406
+  REGION: asia-south1
+  AR: asia-south1-docker.pkg.dev/terraterri-454406/dev-cloud-run-source-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Resolve dev URLs (custom domains)
+        id: u
+        run: |
+          {
+            echo "api1=https://dev.micro-api-one.terraterri.com"
+            echo "api2=https://dev.micro-api-two.terraterri.com"
+            echo "api3=https://dev.micro-api-three.terraterri.com"
+            echo "expoadmin=https://dev.expoadminapi.terraterri.com"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build & push (Vite build-args)
+        run: |
+          docker build -f "${DOCKERFILE}" -t "${AR}/${IMAGE}" \
+            --build-arg "VITE_USER_ENDPOINT=${{ steps.u.outputs.api1 }}" \
+            --build-arg "VITE_SERVICES_ENDPOINT=${{ steps.u.outputs.api2 }}" \
+            --build-arg "VITE_MASTERS_ENDPOINT=${{ steps.u.outputs.api3 }}" \
+            --build-arg "VITE_EXPOADMIN_ENDPOINT=${{ steps.u.outputs.expoadmin }}" \
+            .
+          docker push "${AR}/${IMAGE}"
+
+      - name: Deploy
+        run: |
+          gcloud run deploy "${SERVICE}" --region="${REGION}" --image="${AR}/${IMAGE}" --quiet
+          gcloud run services describe "${SERVICE}" --region="${REGION}" --format='value(status.url)'
