@@ -44,6 +44,7 @@ jobs:
             --build-arg "VITE_SERVICES_ENDPOINT=${{ steps.u.outputs.api2 }}" \
             --build-arg "VITE_MASTERS_ENDPOINT=${{ steps.u.outputs.api3 }}" \
             --build-arg "VITE_EXPOADMIN_ENDPOINT=${{ steps.u.outputs.expoadmin }}" \
+            --build-arg "EXPECT_HOST=dev.micro-api-one.terraterri.com" \
             .
           docker push "${AR}/${IMAGE}"
 
