@@ -121,10 +121,10 @@ const Recept = () => {
   };
 
   const submitExpo = async () => {
-    if (!validate()) {
-      toastError('Please fill in all mandatory fields.');
-      return;
-    }
+    // if (!validate()) {
+    //   toastError('Please fill in all mandatory fields.');
+    //   return;
+    // }
 
     const code = expoUnqCode || localStorage.getItem('expoCode') || formState['expo']?.expoUnqCode;
     try {
