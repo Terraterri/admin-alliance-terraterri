@@ -21,13 +21,21 @@ const createClient = (baseURL) => {
   return client;
 };
 
+// Base URLs from Vite environment variables with production fallbacks
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'https://micro-api-one.terraterri.com/api';
+const MASTER_API_URL = import.meta.env.VITE_MASTER_API_URL || 'https://micro-api-three.terraterri.com/api/';
+const PROJECT_API_URL = import.meta.env.VITE_PROJECT_API_URL || 'https://micro-api-two.terraterri.com/api/project/';
+const EXPO_API_URL = import.meta.env.VITE_EXPO_API_URL || 'https://mmworkspace.com/expo/api/';
+const EXPO_ADMIN_API_URL = import.meta.env.VITE_EXPO_ADMIN_API_URL || 'https://expoadminapi.terraterri.com/';
+const EXPO_BUILDER_API_URL = import.meta.env.VITE_EXPO_BUILDER_API_URL || 'https://expoadminapi.terraterri.com/tt-expo-builder-be/';
+
 // Create API clients
-const authClient = createClient(`https://micro-api-one.terraterri.com/api`);
-const masterClient = createClient(`https://micro-api-three.terraterri.com/api/`);
-const projectClient = createClient(`https://micro-api-two.terraterri.com/api/project/`);
-const expoClient = createClient(`https://mmworkspace.com/expo/api/`);
-const expoAdminClient = createClient(`https://expoadminapi.terraterri.com/`)
-const expoApiClient = createClient(`https://expoadminapi.terraterri.com/tt-expo-builder-be/`)
+const authClient = createClient(AUTH_API_URL);
+const masterClient = createClient(MASTER_API_URL);
+const projectClient = createClient(PROJECT_API_URL);
+const expoClient = createClient(EXPO_API_URL);
+const expoAdminClient = createClient(EXPO_ADMIN_API_URL);
+const expoApiClient = createClient(EXPO_BUILDER_API_URL);
 
 // const authClient = axios.create({
 //   baseURL: 'https://micro-api-one.terraterri.com/api',
@@ -86,11 +94,24 @@ const expoApiClient = createClient(`https://expoadminapi.terraterri.com/tt-expo-
 
 export const fetchImages = async () => {
   try {
-    const response = await axios.get('http://localhost/tt-expo-admin-be/expoBannerImage/uploads');
+    const response = await expoAdminClient.get('expoBannerImage/uploads');
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch images');
   }
 };
 
-export { authClient, masterClient, projectClient, expoClient, expoAdminClient, expoApiClient };
+export { 
+  authClient, 
+  masterClient, 
+  projectClient, 
+  expoClient, 
+  expoAdminClient, 
+  expoApiClient,
+  AUTH_API_URL,
+  MASTER_API_URL,
+  PROJECT_API_URL,
+  EXPO_API_URL,
+  EXPO_ADMIN_API_URL,
+  EXPO_BUILDER_API_URL
+};
