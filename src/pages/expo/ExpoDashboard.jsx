@@ -81,6 +81,28 @@ const ExpoDashboard = () => {
   const [visitorSearchQuery, setVisitorSearchQuery] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Modal Filter & Pagination States - Stall Visitors (Footfall)
+  const [entrySearchQuery, setEntrySearchQuery] = useState('');
+  const [entryFromDate, setEntryFromDate] = useState('');
+  const [entryToDate, setEntryToDate] = useState('');
+  const [entryPage, setEntryPage] = useState(1);
+  const [entryPerPage, setEntryPerPage] = useState(10);
+  const [entryTotalRecords, setEntryTotalRecords] = useState(0);
+  const [entryTotalPages, setEntryTotalPages] = useState(1);
+  const [entryLoading, setEntryLoading] = useState(false);
+
+  // Modal Filter & Pagination States - Meeting Interactions Log
+  const [interactionSearchQuery, setInteractionSearchQuery] = useState('');
+  const [interactionFromDate, setInteractionFromDate] = useState('');
+  const [interactionToDate, setInteractionToDate] = useState('');
+  const [interactionTableFilter, setInteractionTableFilter] = useState('ALL');
+  const [interactionStaffFilter, setInteractionStaffFilter] = useState('ALL');
+  const [interactionPage, setInteractionPage] = useState(1);
+  const [interactionPerPage, setInteractionPerPage] = useState(10);
+  const [interactionTotalRecords, setInteractionTotalRecords] = useState(0);
+  const [interactionTotalPages, setInteractionTotalPages] = useState(1);
+  const [interactionLoading, setInteractionLoading] = useState(false);
+
   // Dynamic Live Expo 3D Arena Link
   const expoLink = selectedExpoCode
     ? `https://storage.googleapis.com/airpropx-expo-dev/index.html?expo=${encodeURIComponent(selectedExpoCode)}`
@@ -348,23 +370,128 @@ const ExpoDashboard = () => {
       });
   }, [filteredStalls]);
 
-  // Handle Opening Stall Analytics Modal
-  const handleOpenStallModal = async (stall) => {
-    setSelectedStallModal(stall);
-    setStallDetailInfo(null);
-    setStallEntryVisitors([]);
-    setStallCustomersData([]);
-    setVisitorSearchQuery('');
-    setModalTab('ENTRIES');
-    setModalLoading(true);
-
+  // Fetch Stall Visitors from backend API with filters & pagination
+  const fetchStallVisitors = async (expoCode, stallCode, page = 1, limit = 10, fromDate = '', toDate = '', search = '') => {
+    if (!expoCode || !stallCode) return;
+    setEntryLoading(true);
     try {
       const config = {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}` || null
         }
       };
+      const params = new URLSearchParams({
+        expoId: expoCode,
+        stallCode: stallCode,
+        page: String(page),
+        limit: String(limit)
+      });
+      if (fromDate) params.append('fromDate', fromDate);
+      if (toDate) params.append('toDate', toDate);
+      if (search && search.trim()) params.append('search', search.trim());
 
+      const res = await expoApiClient.get(`expoAnalytics/getStallVisitors.php?${params.toString()}`, config);
+      if (res?.data?.success || res?.data?.status) {
+        const records = res.data.data || [];
+        setStallEntryVisitors(records);
+        setEntryTotalRecords(res.data.totalVisitors !== undefined ? Number(res.data.totalVisitors) : records.length);
+        setEntryTotalPages(res.data.totalPages ? Number(res.data.totalPages) : Math.ceil((records.length || 1) / limit));
+      } else {
+        setStallEntryVisitors([]);
+        setEntryTotalRecords(0);
+        setEntryTotalPages(1);
+      }
+    } catch (err) {
+      console.error('Error fetching stall visitors:', err);
+      setStallEntryVisitors([]);
+    } finally {
+      setEntryLoading(false);
+    }
+  };
+
+  // Fetch Stall Meeting Interactions from backend API with filters & pagination
+  const fetchStallInteractions = async (expoCode, stall, page = 1, limit = 10, fromDate = '', toDate = '', tableFilter = 'ALL', staffFilter = 'ALL', search = '') => {
+    if (!expoCode || !stall) return;
+    setInteractionLoading(true);
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('adminToken')}` || null
+        }
+      };
+      const stallInfoId = stall.stallInfoId || stall.code;
+      const params = new URLSearchParams({
+        expoCode: expoCode,
+        stallId: String(stallInfoId),
+        stallCode: stall.code,
+        page: String(page),
+        limit: String(limit)
+      });
+      if (fromDate) params.append('fromDate', fromDate);
+      if (toDate) params.append('toDate', toDate);
+      if (tableFilter && tableFilter !== 'ALL') params.append('tableId', tableFilter);
+      if (staffFilter && staffFilter !== 'ALL') {
+        if (staffFilter === 'HUMAN') {
+          params.append('staffType', 'human');
+        } else if (staffFilter === 'AI') {
+          params.append('staffType', 'ai');
+        } else {
+          params.append('executiveId', staffFilter);
+        }
+      }
+      if (search && search.trim()) params.append('search', search.trim());
+
+      const res = await expoApiClient.get(`expoAnalytics/getStallCustomers.php?${params.toString()}`, config);
+      if (res?.data?.success || res?.data?.status) {
+        const payload = res.data.logs || res.data.data || [];
+        const parsed = parseCustomerData(payload, stall);
+        setStallCustomersData(parsed);
+        setInteractionTotalRecords(res.data.totalRecords !== undefined ? Number(res.data.totalRecords) : parsed.length);
+        setInteractionTotalPages(res.data.totalPages ? Number(res.data.totalPages) : Math.ceil((parsed.length || 1) / limit));
+      } else if (Array.isArray(stall.booking?.visitors)) {
+        const parsed = parseCustomerData(stall.booking.visitors, stall);
+        setStallCustomersData(parsed);
+        setInteractionTotalRecords(parsed.length);
+        setInteractionTotalPages(Math.ceil(parsed.length / limit) || 1);
+      } else {
+        const fallback = generateFallbackVisitors(stall);
+        setStallCustomersData(fallback);
+        setInteractionTotalRecords(fallback.length);
+        setInteractionTotalPages(Math.ceil(fallback.length / limit) || 1);
+      }
+    } catch (err) {
+      console.error('Error fetching stall interactions:', err);
+      const fallback = generateFallbackVisitors(stall);
+      setStallCustomersData(fallback);
+      setInteractionTotalRecords(fallback.length);
+      setInteractionTotalPages(1);
+    } finally {
+      setInteractionLoading(false);
+    }
+  };
+
+  // Handle Opening Stall Analytics Modal
+  const handleOpenStallModal = async (stall) => {
+    setSelectedStallModal(stall);
+    setStallDetailInfo(null);
+    setStallEntryVisitors([]);
+    setStallCustomersData([]);
+    setEntrySearchQuery('');
+    setEntryFromDate('');
+    setEntryToDate('');
+    setEntryPage(1);
+    setEntryPerPage(10);
+    setInteractionSearchQuery('');
+    setInteractionFromDate('');
+    setInteractionToDate('');
+    setInteractionTableFilter('ALL');
+    setInteractionStaffFilter('ALL');
+    setInteractionPage(1);
+    setInteractionPerPage(10);
+    setModalTab('ENTRIES');
+    setModalLoading(true);
+
+    try {
       // 1. Fetch detailed stall info if available
       if (stall.stallInfoId) {
         try {
@@ -377,40 +504,13 @@ const ExpoDashboard = () => {
         }
       }
 
-      // 2. Fetch Total Stall Visitors who entered the stall (getStallVisitors.php)
-      const visitorsPromise = expoApiClient.get(
-        `expoAnalytics/getStallVisitors.php?expoId=${selectedExpoCode}&stallCode=${stall.code}`,
-        config
-      );
-
-      // 3. Fetch Stall Meeting Table Customers / Interactions (getStallCustomers.php)
-      const stallInfoId = stall.stallInfoId || stall.code;
-      const customersPromise = expoApiClient.get(
-        `expoAnalytics/getStallCustomers.php?expoCode=${selectedExpoCode}&stallId=${stallInfoId}`,
-        config
-      );
-
-      const [visitorsRes, customersRes] = await Promise.allSettled([visitorsPromise, customersPromise]);
-
-      // Process Stall Entry Visitors
-      if (visitorsRes.status === 'fulfilled' && (visitorsRes.value?.data?.success || visitorsRes.value?.data?.status)) {
-        setStallEntryVisitors(visitorsRes.value.data.data || []);
-      } else {
-        setStallEntryVisitors([]);
-      }
-
-      // Process Meeting Table Customers
-      if (customersRes.status === 'fulfilled' && (customersRes.value?.data?.success || customersRes.value?.data?.status)) {
-        const parsed = parseCustomerData(customersRes.value.data.data, stall);
-        setStallCustomersData(parsed);
-      } else if (Array.isArray(stall.booking?.visitors)) {
-        setStallCustomersData(parseCustomerData(stall.booking.visitors, stall));
-      } else {
-        setStallCustomersData(generateFallbackVisitors(stall));
-      }
+      // 2. Fetch initial visitors and interactions via backend
+      await Promise.allSettled([
+        fetchStallVisitors(selectedExpoCode, stall.code, 1, 10, '', '', ''),
+        fetchStallInteractions(selectedExpoCode, stall, 1, 10, '', '', 'ALL', 'ALL', '')
+      ]);
     } catch (error) {
       console.error('Error fetching stall analytics details:', error);
-      setStallCustomersData(generateFallbackVisitors(stall));
     } finally {
       setModalLoading(false);
     }
@@ -420,7 +520,72 @@ const ExpoDashboard = () => {
     setSelectedStallModal(null);
     setStallEntryVisitors([]);
     setStallCustomersData([]);
+    setEntrySearchQuery('');
+    setEntryFromDate('');
+    setEntryToDate('');
+    setEntryPage(1);
+    setInteractionSearchQuery('');
+    setInteractionFromDate('');
+    setInteractionToDate('');
+    setInteractionTableFilter('ALL');
+    setInteractionStaffFilter('ALL');
+    setInteractionPage(1);
   };
+
+  // Effect to re-fetch stall visitors when filters/pagination change
+  useEffect(() => {
+    if (!selectedStallModal) return;
+    const timer = setTimeout(() => {
+      fetchStallVisitors(
+        selectedExpoCode,
+        selectedStallModal.code,
+        entryPage,
+        entryPerPage,
+        entryFromDate,
+        entryToDate,
+        entrySearchQuery
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    selectedStallModal?.code,
+    selectedExpoCode,
+    entryPage,
+    entryPerPage,
+    entryFromDate,
+    entryToDate,
+    entrySearchQuery
+  ]);
+
+  // Effect to re-fetch stall meeting interactions when filters/pagination change
+  useEffect(() => {
+    if (!selectedStallModal) return;
+    const timer = setTimeout(() => {
+      fetchStallInteractions(
+        selectedExpoCode,
+        selectedStallModal,
+        interactionPage,
+        interactionPerPage,
+        interactionFromDate,
+        interactionToDate,
+        interactionTableFilter,
+        interactionStaffFilter,
+        interactionSearchQuery
+      );
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    selectedStallModal?.code,
+    selectedStallModal?.stallInfoId,
+    selectedExpoCode,
+    interactionPage,
+    interactionPerPage,
+    interactionFromDate,
+    interactionToDate,
+    interactionTableFilter,
+    interactionStaffFilter,
+    interactionSearchQuery
+  ]);
 
   // Helper to parse complex customer analytics structures
   const parseCustomerData = (data, stall) => {
@@ -446,9 +611,9 @@ const ExpoDashboard = () => {
 
     if (Array.isArray(data)) {
       data.forEach((item, index) => {
-        const tableNum = Number(item.tableId) || (index % stall.tablesCount) + 1;
+        const tableNum = Number(item.tableId) || (index % (stall?.tablesCount || 2)) + 1;
         const execName = resolveExecutiveName(item, tableNum);
-        const isAi = item.executiveId === 'AI_BOT' || execName.includes('AI');
+        const isAi = item.executiveId === 'AI_BOT' || item.executiveId === '0' || !item.executiveId || execName.includes('AI');
 
         if (item.users && Array.isArray(item.users)) {
           item.users.forEach((u, uIdx) => {
@@ -469,12 +634,12 @@ const ExpoDashboard = () => {
           });
         } else {
           list.push({
-            id: index,
+            id: item.id || index,
             userId: item.userId || item.id,
             name: item.name || item.userName || `Visitor ${index + 1}`,
             phone: item.number || item.phone || item.mobile || '-',
             email: item.email || '-',
-            visitedAt: item.joined_at || item.visited_at || item.created_at || moment().format('YYYY-MM-DD HH:mm'),
+            visitedAt: item.joined_at || (item.join_date && item.joined_time ? `${item.join_date} ${item.joined_time}` : item.visited_at) || moment().format('YYYY-MM-DD HH:mm'),
             executiveName: execName,
             executiveId: item.executiveId,
             isAi,
@@ -491,7 +656,7 @@ const ExpoDashboard = () => {
       Object.entries(data).forEach(([dateStr, execItems], dIdx) => {
         if (Array.isArray(execItems)) {
           execItems.forEach((execItem, eIdx) => {
-            const tableNum = Number(execItem.tableId) || (eIdx % stall.tablesCount) + 1;
+            const tableNum = Number(execItem.tableId) || (eIdx % (stall?.tablesCount || 2)) + 1;
             const execName = resolveExecutiveName(execItem, tableNum);
             const isAi = execItem.executiveId === 'AI_BOT' || execName.includes('AI');
 
@@ -524,7 +689,7 @@ const ExpoDashboard = () => {
 
   // Generate sensible demonstration data if backend has empty interactions
   const generateFallbackVisitors = (stall) => {
-    if (!stall.isOccupied) return [];
+    if (!stall || !stall.isOccupied) return [];
     return Array.from({ length: Math.min(stall.visitorsCount || 6, 8) }, (_, idx) => {
       const tableNo = (idx % stall.tablesCount) + 1;
       const isAi = tableNo === 1;
@@ -543,30 +708,118 @@ const ExpoDashboard = () => {
     });
   };
 
-  // Filter stall entry visitors inside modal by search
-  const filteredModalEntryVisitors = useMemo(() => {
-    if (!visitorSearchQuery.trim()) return stallEntryVisitors;
-    const q = visitorSearchQuery.toLowerCase();
-    return stallEntryVisitors.filter((v) =>
-      v.name?.toLowerCase().includes(q) ||
-      v.number?.toLowerCase().includes(q) ||
-      v.phone?.toLowerCase().includes(q) ||
-      v.email?.toLowerCase().includes(q) ||
-      v.visit_date?.toLowerCase().includes(q)
-    );
-  }, [stallEntryVisitors, visitorSearchQuery]);
 
-  // Filter meeting interaction visitors inside modal by search
-  const filteredModalVisitors = useMemo(() => {
-    if (!visitorSearchQuery.trim()) return stallCustomersData;
-    const q = visitorSearchQuery.toLowerCase();
-    return stallCustomersData.filter((v) =>
-      v.name?.toLowerCase().includes(q) ||
-      v.phone?.toLowerCase().includes(q) ||
-      v.email?.toLowerCase().includes(q) ||
-      v.executiveName?.toLowerCase().includes(q)
-    );
-  }, [stallCustomersData, visitorSearchQuery]);
+  // Reset helpers
+  const handleResetEntryFilters = () => {
+    setEntrySearchQuery('');
+    setEntryFromDate('');
+    setEntryToDate('');
+    setEntryPage(1);
+  };
+
+  const handleResetInteractionFilters = () => {
+    setInteractionSearchQuery('');
+    setInteractionFromDate('');
+    setInteractionToDate('');
+    setInteractionTableFilter('ALL');
+    setInteractionStaffFilter('ALL');
+    setInteractionPage(1);
+  };
+
+  // Extract full stall staff list from getStallInfo.php (Executive, Manager, Builder)
+  const stallStaffList = useMemo(() => {
+    const list = [];
+    const seenIds = new Set();
+
+    // 1. Executives from getStallInfo.php
+    if (Array.isArray(stallDetailInfo?.Executive)) {
+      stallDetailInfo.Executive.forEach((exec) => {
+        if (exec && exec.name) {
+          const idKey = String(exec.id || exec.name);
+          if (!seenIds.has(idKey)) {
+            seenIds.add(idKey);
+            list.push({
+              id: String(exec.id || ''),
+              name: exec.name.trim(),
+              role: exec.role || 'Executive',
+              phone: exec.phone || ''
+            });
+          }
+        }
+      });
+    }
+
+    // 2. Fallback to executives from stall booking object
+    if (list.length === 0 && selectedStallModal) {
+      const modalExecs = Array.isArray(selectedStallModal.executives)
+        ? selectedStallModal.executives
+        : Array.isArray(selectedStallModal.booking?.Executive)
+          ? selectedStallModal.booking.Executive
+          : [];
+      modalExecs.forEach((exec) => {
+        if (exec && exec.name) {
+          const idKey = String(exec.id || exec.name);
+          if (!seenIds.has(idKey)) {
+            seenIds.add(idKey);
+            list.push({
+              id: String(exec.id || ''),
+              name: exec.name.trim(),
+              role: exec.role || 'Executive',
+              phone: exec.phone || ''
+            });
+          }
+        }
+      });
+    }
+
+    // 3. Manager from getStallInfo.php
+    if (stallDetailInfo?.Manager && stallDetailInfo.Manager.name) {
+      const mgr = stallDetailInfo.Manager;
+      const idKey = String(mgr.id || mgr.name);
+      if (!seenIds.has(idKey)) {
+        seenIds.add(idKey);
+        list.push({
+          id: String(mgr.id || ''),
+          name: mgr.name.trim(),
+          role: mgr.role || 'Manager',
+          phone: mgr.phone || ''
+        });
+      }
+    }
+
+    // 4. Builder Rep from getStallInfo.php
+    if (stallDetailInfo?.Builder && stallDetailInfo.Builder.name) {
+      const bld = stallDetailInfo.Builder;
+      const idKey = String(bld.id || bld.name);
+      if (!seenIds.has(idKey)) {
+        seenIds.add(idKey);
+        list.push({
+          id: String(bld.id || ''),
+          name: bld.name.trim(),
+          role: bld.role || 'Builder',
+          phone: bld.phone || ''
+        });
+      }
+    }
+
+    // 5. Merge any additional human staff found in interaction logs
+    stallCustomersData.forEach((vis) => {
+      if (vis.executiveName && !vis.executiveName.includes('AI') && vis.executiveId !== 'AI_BOT') {
+        const idKey = String(vis.executiveId || vis.executiveName);
+        if (!seenIds.has(idKey) && !seenIds.has(vis.executiveName)) {
+          seenIds.add(idKey);
+          list.push({
+            id: String(vis.executiveId || ''),
+            name: vis.executiveName.trim(),
+            role: 'Executive',
+            phone: ''
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [stallDetailInfo, selectedStallModal, stallCustomersData]);
 
   // Aggregate interactions per meeting table in selected stall
   const tableInteractionsBreakdown = useMemo(() => {
@@ -618,7 +871,7 @@ const ExpoDashboard = () => {
               <div className="row">
                 <div className="col-12">
                   <div className="page-title-box d-flex align-items-center justify-content-between">
-                    <h4 className="mb-0 text-white font-size-18">Expo Analytics & Stall Performance</h4>
+                    <h4 className="mb-0 text-black font-size-18">Franchise Dashboard</h4>
                     <div className="page-title-right">
                       <ol className="breadcrumb m-0">
                         <li className="breadcrumb-item">
@@ -643,9 +896,9 @@ const ExpoDashboard = () => {
                         <h2 className="expo-dashboard-title">
                           {selectedExpo ? `${selectedExpo.expoCity || ''} Expo Analytics` : 'Expo Analytics Hub'}
                         </h2>
-                        <p className="expo-dashboard-subtitle">
+                        {/* <p className="expo-dashboard-subtitle">
                           Real-time 27-stall footfall, meeting room engagement, and visitor interaction metrics
-                        </p>
+                        </p> */}
                       </div>
                     </div>
                   </div>
@@ -677,7 +930,7 @@ const ExpoDashboard = () => {
                       </Button>
                     </div>
 
-                    {selectedExpo && (
+                    {/* {selectedExpo && (
                       <div className="mt-3 d-flex flex-wrap gap-2 justify-content-lg-end">
                         <span className="expo-badge-info">
                           <FaCalendarAlt size={12} />
@@ -688,7 +941,7 @@ const ExpoDashboard = () => {
                           27 Total Stalls
                         </span>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
@@ -701,7 +954,7 @@ const ExpoDashboard = () => {
                       </div>
                       <div className="expo-live-link-text">
                         <div className="expo-live-link-label">
-                          Live 3D Virtual Expo Arena
+                          Live Expo Link
                         </div>
                         <a
                           href={expoLink}
@@ -723,7 +976,7 @@ const ExpoDashboard = () => {
                         className="btn-live-arena"
                       >
                         <FaExternalLinkAlt size={12} />
-                        <span>Open Live Arena</span>
+                        <span>Open Live Expo</span>
                       </a>
 
                       <button
@@ -744,7 +997,7 @@ const ExpoDashboard = () => {
                         title="Share on WhatsApp"
                       >
                         <MdWhatsapp size={16} />
-                        <span className="d-none d-sm-inline">WhatsApp</span>
+                        <span className="d-none d-sm-inline">Share</span>
                       </a>
 
                       <a
@@ -762,7 +1015,7 @@ const ExpoDashboard = () => {
 
               {/* KPI Summary Row */}
               <div className="row">
-                <div className="col-xl-3 col-md-6">
+                <div className="col-xl-2 col-md-6">
                   <div className="kpi-card kpi-primary">
                     <div className="d-flex align-items-center justify-content-between">
                       <div>
@@ -777,12 +1030,12 @@ const ExpoDashboard = () => {
                   </div>
                 </div>
 
-                <div className="col-xl-3 col-md-6">
+                <div className="col-xl-2 col-md-6">
                   <div className="kpi-card kpi-success">
                     <div className="d-flex align-items-center justify-content-between">
                       <div>
-                        <div className="kpi-label">Total Stall Visits</div>
-                        <h3 className="kpi-value">{analyticsSummary.totalStallVisits}</h3>
+                        <div className="kpi-label">Total Stall Wise Visitors</div>
+                        <h3 className="kpi-value"><a href="/stall-visitors">{analyticsSummary.totalStallVisits}</a></h3>
                         <div className="kpi-subtext">Aggregated visits across 27 stalls</div>
                       </div>
                       <div className="kpi-icon-wrap bg-success-light">
@@ -792,12 +1045,12 @@ const ExpoDashboard = () => {
                   </div>
                 </div>
 
-                <div className="col-xl-3 col-md-6">
+                <div className="col-xl-2 col-md-6">
                   <div className="kpi-card kpi-purple">
                     <div className="d-flex align-items-center justify-content-between">
                       <div>
                         <div className="kpi-label">Meeting Room Interactions</div>
-                        <h3 className="kpi-value">{analyticsSummary.totalMeetingInteractions}</h3>
+                        <h3 className="kpi-value"><a href="/stall-interactions">{analyticsSummary.totalMeetingInteractions}</a></h3>
                         <div className="kpi-subtext">Executive table chats & calls</div>
                       </div>
                       <div className="kpi-icon-wrap bg-purple-light">
@@ -807,11 +1060,30 @@ const ExpoDashboard = () => {
                   </div>
                 </div>
 
-                <div className="col-xl-3 col-md-6">
+                <div className="col-xl-2 col-md-6">
                   <div className="kpi-card kpi-warning">
                     <div className="d-flex align-items-center justify-content-between">
                       <div>
-                        <div className="kpi-label">Occupied Stalls</div>
+                        <div className="kpi-label">Total Builders Exhibited</div>
+                        <h3 className="kpi-value">
+                          <a href="/builderparticipate"> {analyticsSummary.occupiedStalls} <span className="text-muted font-size-14" style={{ fontSize: '15px' }}></span></a>
+                        </h3>
+                        <div className="kpi-subtext">
+                          {analyticsSummary.availableStalls} stalls available for booking
+                        </div>
+                      </div>
+                      <div className="kpi-icon-wrap bg-warning-light">
+                        <FaBuilding />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-xl-2 col-md-6">
+                  <div className="kpi-card kpi-warning">
+                    <div className="d-flex align-items-center justify-content-between">
+                      <div>
+                        <div className="kpi-label">Current Month Builders Exhibited</div>
                         <h3 className="kpi-value">
                           <a href="/builderparticipate"> {analyticsSummary.occupiedStalls} <span className="text-muted font-size-14" style={{ fontSize: '15px' }}>/ {analyticsSummary.totalStalls}</span></a>
                         </h3>
@@ -832,7 +1104,7 @@ const ExpoDashboard = () => {
                 <div className="analytics-card-header">
                   <div className="analytics-card-title">
                     <BsShop className="text-primary" />
-                    <span>27-Stall Interactive Analytics & Meeting Room Heatmap</span>
+                    <span>27-Stall Booking Analytics</span>
                   </div>
 
                   {/* Filter Controls */}
@@ -871,26 +1143,28 @@ const ExpoDashboard = () => {
                       <button
                         className={`stall-filter-btn ${activeTierFilter === 'OCCUPIED' ? 'active' : ''}`}
                         onClick={() => setActiveTierFilter('OCCUPIED')}
+                        style={{ background: '#dcfce7', color: '#0f766e', border: '1px solid #0f766e' }}
                       >
                         Booked ({analyticsSummary.occupiedStalls})
                       </button>
                       <button
                         className={`stall-filter-btn ${activeTierFilter === 'AVAILABLE' ? 'active' : ''}`}
                         onClick={() => setActiveTierFilter('AVAILABLE')}
+                        style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}
                       >
                         Available ({analyticsSummary.availableStalls})
                       </button>
                     </div>
 
                     {/* Status Legend */}
-                    <div className="stall-status-legend d-none d-md-flex">
+                    {/* <div className="stall-status-legend d-none d-md-flex">
                       <span className="legend-item">
                         <span className="legend-dot dot-booked"></span> Booked ({analyticsSummary.occupiedStalls})
                       </span>
                       <span className="legend-item">
                         <span className="legend-dot dot-available"></span> Available ({analyticsSummary.availableStalls})
                       </span>
-                    </div>
+                    </div> */}
 
                     <div className="d-flex align-items-center gap-2 ms-auto">
                       <div className="search-input-wrap" style={{ minWidth: '200px' }}>
@@ -968,7 +1242,7 @@ const ExpoDashboard = () => {
                                 </div>
 
                                 <div className="stall-category-subtitle">
-                                  {stall.type} Tier
+                                  {stall.type} Stall
                                 </div>
 
                                 {/* Center: Prominent Analytics Counts */}
@@ -1021,7 +1295,7 @@ const ExpoDashboard = () => {
                         <thead>
                           <tr>
                             <th>Stall Code</th>
-                            <th>Tier / Type</th>
+                            <th>Stall</th>
                             <th>Assigned Exhibitor / Builder</th>
                             <th>Meeting Rooms / Tables</th>
                             <th>Total Visitors</th>
@@ -1129,7 +1403,7 @@ const ExpoDashboard = () => {
                           <span className="text-white-50 font-size-13">
                             {selectedStallModal.type} Stall • {selectedStallModal.tablesCount} Meeting Rooms / Executive Tables
                             {stallDetailInfo?.Builder?.name && (
-                              <span className="ms-2 badge bg-light-subtle border border-white-50">
+                              <span className="ms-2 badge border border-white-50">
                                 Builder Rep: {stallDetailInfo.Builder.name} ({stallDetailInfo.Builder.phone || '-'})
                               </span>
                             )}
@@ -1148,7 +1422,7 @@ const ExpoDashboard = () => {
                           <div className="p-3 bg-light rounded border text-center">
                             <span className="text-muted font-size-12 fw-bold text-uppercase">Total Stall Visitors</span>
                             <h4 className="mt-1 mb-0 text-primary fw-bold">
-                              {stallEntryVisitors.length || selectedStallModal.visitorsCount}
+                              {entryTotalRecords || stallEntryVisitors.length || selectedStallModal.visitorsCount}
                             </h4>
                           </div>
                         </div>
@@ -1157,7 +1431,7 @@ const ExpoDashboard = () => {
                           <div className="p-3 bg-light rounded border text-center">
                             <span className="text-muted font-size-12 fw-bold text-uppercase">Meeting Interactions</span>
                             <h4 className="mt-1 mb-0 text-success fw-bold">
-                              {stallCustomersData.length || selectedStallModal.meetingInteractionsCount}
+                              {interactionTotalRecords || stallCustomersData.length || selectedStallModal.meetingInteractionsCount}
                             </h4>
                           </div>
                         </div>
@@ -1170,8 +1444,6 @@ const ExpoDashboard = () => {
                             </h4>
                           </div>
                         </div>
-
-
                       </div>
 
                       {/* Modal Navigation Tabs */}
@@ -1180,19 +1452,13 @@ const ExpoDashboard = () => {
                           className={`modal-tab-btn ${modalTab === 'ENTRIES' ? 'active' : ''}`}
                           onClick={() => setModalTab('ENTRIES')}
                         >
-                          <FaUsers className="me-1" /> Stall Visitors ({stallEntryVisitors.length || selectedStallModal.visitorsCount})
+                          <FaUsers className="me-1" /> Stall Visitors ({entryTotalRecords || stallEntryVisitors.length || selectedStallModal.visitorsCount})
                         </button>
-                        {/* <button
-                          className={`modal-tab-btn ${modalTab === 'MEETINGS' ? 'active' : ''}`}
-                          onClick={() => setModalTab('MEETINGS')}
-                        >
-                          <MdMeetingRoom className="me-1" /> Meeting Room Tables & Executives ({selectedStallModal.tablesCount})
-                        </button> */}
                         <button
                           className={`modal-tab-btn ${modalTab === 'INTERACTIONS' ? 'active' : ''}`}
                           onClick={() => setModalTab('INTERACTIONS')}
                         >
-                          <FaHandshake className="me-1" /> Meeting Interaction Logs ({stallCustomersData.length})
+                          <FaHandshake className="me-1" /> Meeting Interaction Logs ({interactionTotalRecords || stallCustomersData.length || selectedStallModal.meetingInteractionsCount})
                         </button>
                       </div>
 
@@ -1206,24 +1472,69 @@ const ExpoDashboard = () => {
                           {/* TAB 1: STALL FOOTFALL & VISITORS (from getStallVisitors.php) */}
                           {modalTab === 'ENTRIES' && (
                             <div>
-                              <div className="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                  <h6 className="mb-0 fw-bold">Stall Visitors</h6>
-                                  {/* <small className="text-muted">Direct footfall of users who visited and entered stall {selectedStallModal.code}</small> */}
+                              {/* Filter Toolbar */}
+                              <div className="modal-filter-toolbar">
+                                <div className="modal-filter-item flex-grow-1" style={{ minWidth: '200px' }}>
+                                  <label className="modal-filter-label">Search Visitor</label>
+                                  <div className="search-input-wrap">
+                                    <FaSearch className="search-icon" />
+                                    <Form.Control
+                                      type="text"
+                                      placeholder="Search by name, phone, email, id..."
+                                      value={entrySearchQuery}
+                                      onChange={(e) => {
+                                        setEntrySearchQuery(e.target.value);
+                                        setEntryPage(1);
+                                      }}
+                                      className="modal-filter-input w-100"
+                                    />
+                                  </div>
                                 </div>
-                                <div className="search-input-wrap" style={{ width: '260px' }}>
-                                  <FaSearch className="search-icon" />
+
+                                <div className="modal-filter-item">
+                                  <label className="modal-filter-label">From Date</label>
                                   <Form.Control
-                                    type="text"
-                                    placeholder="Search visitor by name, phone..."
-                                    value={visitorSearchQuery}
-                                    onChange={(e) => setVisitorSearchQuery(e.target.value)}
-                                    size="sm"
+                                    type="date"
+                                    value={entryFromDate}
+                                    onChange={(e) => {
+                                      setEntryFromDate(e.target.value);
+                                      setEntryPage(1);
+                                    }}
+                                    className="modal-filter-input"
                                   />
                                 </div>
+
+                                <div className="modal-filter-item">
+                                  <label className="modal-filter-label">To Date</label>
+                                  <Form.Control
+                                    type="date"
+                                    value={entryToDate}
+                                    onChange={(e) => {
+                                      setEntryToDate(e.target.value);
+                                      setEntryPage(1);
+                                    }}
+                                    className="modal-filter-input"
+                                  />
+                                </div>
+
+                                {(entrySearchQuery || entryFromDate || entryToDate) && (
+                                  <button
+                                    type="button"
+                                    className="btn-filter-reset"
+                                    onClick={handleResetEntryFilters}
+                                    title="Reset filters"
+                                  >
+                                    <FaSyncAlt size={11} /> Reset
+                                  </button>
+                                )}
                               </div>
 
-                              <div className="table-responsive">
+                              <div className="table-responsive position-relative">
+                                {entryLoading && (
+                                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ background: 'rgba(255,255,255,0.7)', zIndex: 5 }}>
+                                    <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                  </div>
+                                )}
                                 <table className="custom-analytics-table">
                                   <thead>
                                     <tr>
@@ -1237,171 +1548,232 @@ const ExpoDashboard = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {filteredModalEntryVisitors.map((vis, idx) => (
-                                      <tr key={vis.id || idx}>
-                                        <td>{idx + 1}</td>
-                                        <td>
-                                          <div className="d-flex align-items-center gap-2">
-                                            <div className="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style={{ width: '28px', height: '28px', fontSize: '12px', fontWeight: 'bold' }}>
-                                              {(vis.name || 'V').charAt(0).toUpperCase()}
+                                    {stallEntryVisitors.map((vis, idx) => {
+                                      const rowNumber = (entryPage - 1) * entryPerPage + idx + 1;
+                                      return (
+                                        <tr key={vis.id || idx}>
+                                          <td>{rowNumber}</td>
+                                          <td>
+                                            <div className="d-flex align-items-center gap-2">
+                                              <div className="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style={{ width: '28px', height: '28px', fontSize: '12px', fontWeight: 'bold' }}>
+                                                {(vis.name || 'V').charAt(0).toUpperCase()}
+                                              </div>
+                                              <strong>{vis.name || 'Visitor'}</strong>
                                             </div>
-                                            <strong>{vis.name || 'Visitor'}</strong>
-                                          </div>
-                                        </td>
-                                        <td>
-                                          <span className="d-flex align-items-center gap-1">
-                                            <FaPhoneAlt size={11} className="text-muted" /> {vis.number || vis.phone || '-'}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="d-flex align-items-center gap-1 text-muted">
-                                            <FaEnvelope size={11} /> {vis.email || '-'}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="d-flex align-items-center gap-1 text-muted">
-                                            <FaCalendarAlt size={11} /> {vis.visit_date ? moment(vis.visit_date).format('DD MMM YYYY') : '-'}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="badge bg-primary-subtle text-primary border px-2 py-1">
-                                            <FaClock size={11} className="me-1" /> {vis.visit_time || vis.time || '-'}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="badge bg-light text-dark font-monospace">
-                                            #{vis.userId || vis.id || '-'}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    ))}
+                                          </td>
+                                          <td>
+                                            <span className="d-flex align-items-center gap-1">
+                                              <FaPhoneAlt size={11} className="text-muted" /> {vis.number || vis.phone || '-'}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="d-flex align-items-center gap-1 text-muted">
+                                              <FaEnvelope size={11} /> {vis.email || '-'}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="d-flex align-items-center gap-1 text-muted">
+                                              <FaCalendarAlt size={11} /> {vis.visit_date ? moment(vis.visit_date).format('DD MMM YYYY') : '-'}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="badge bg-primary-subtle text-primary border px-2 py-1">
+                                              <FaClock size={11} className="me-1" /> {vis.visit_time || vis.time || '-'}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="badge bg-light text-dark font-monospace">
+                                              #{vis.userId || vis.id || '-'}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
 
-                                    {filteredModalEntryVisitors.length === 0 && (
+                                    {stallEntryVisitors.length === 0 && !entryLoading && (
                                       <tr>
                                         <td colSpan="7" className="text-center py-4 text-muted">
-                                          No stall footfall visitors recorded yet for {selectedStallModal.code}.
+                                          No stall visitors found matching the filter criteria.
                                         </td>
                                       </tr>
                                     )}
                                   </tbody>
                                 </table>
                               </div>
-                            </div>
-                          )}
 
-                          {/* TAB 2: MEETING ROOM TABLES & EXECUTIVE INTERACTIONS */}
-                          {modalTab === 'MEETINGS' && (
-                            <div>
-                              <div className="row g-3">
-                                {tableInteractionsBreakdown.map((tbl) => (
-                                  <div className="col-lg-4 col-md-6" key={tbl.tableNo}>
-                                    <div className="executive-room-card">
-                                      <div className="d-flex justify-content-between align-items-start mb-2">
-                                        <span className="table-num-badge">
-                                          Table {tbl.tableNo} / Meeting Room
-                                        </span>
-                                        <span className="badge bg-success-subtle text-success">
-                                          {tbl.visitorsCount} Connected
-                                        </span>
-                                      </div>
+                              {/* Pagination Controls */}
+                              {entryTotalRecords > 0 && (
+                                <div className="custom-pagination-wrap">
+                                  <div className="pagination-info">
+                                    Showing {Math.min((entryPage - 1) * entryPerPage + 1, entryTotalRecords)} to{' '}
+                                    {Math.min(entryPage * entryPerPage, entryTotalRecords)} of {entryTotalRecords} visitors
+                                  </div>
 
-                                      {/* Assigned Human Executive Header */}
-                                      <div className="d-flex align-items-center gap-2 mb-2">
-                                        <div className="rounded-circle p-2 bg-primary-subtle text-primary">
-                                          <FaUserTie size={16} />
-                                        </div>
-                                        <div className="flex-grow-1 min-w-0">
-                                          <h6 className="mb-0 fw-bold text-truncate" title={tbl.name}>
-                                            {tbl.name}
-                                          </h6>
-                                          <small className="text-muted">
-                                            Executive In-Charge
-                                          </small>
-                                        </div>
-                                      </div>
+                                  <div className="d-flex align-items-center gap-2">
+                                    <Form.Select
+                                      className="pagination-per-page-select"
+                                      value={entryPerPage}
+                                      onChange={(e) => {
+                                        setEntryPerPage(Number(e.target.value));
+                                        setEntryPage(1);
+                                      }}
+                                    >
+                                      <option value={10}>10 / page</option>
+                                      <option value={25}>25 / page</option>
+                                      <option value={50}>50 / page</option>
+                                    </Form.Select>
 
-                                      <div className="small text-muted mb-2">
-                                        <FaPhoneAlt className="me-1" size={11} /> {tbl.phone || '+91 98000 00000'}
-                                      </div>
+                                    <div className="pagination-controls">
+                                      <button
+                                        type="button"
+                                        className="pagination-btn"
+                                        onClick={() => setEntryPage((p) => Math.max(1, p - 1))}
+                                        disabled={entryPage <= 1}
+                                        title="Previous Page"
+                                      >
+                                        &laquo;
+                                      </button>
 
-                                      {/* AI Bot Standby Fallback Indicator */}
-                                      {tbl.hasAiAssisted ? (
-                                        <div className="p-2 mb-2 rounded bg-purple-subtle border border-purple-subtle font-size-12 d-flex align-items-center gap-2">
-                                          <FaRobot className="text-purple flex-shrink-0" size={14} />
-                                          <div>
-                                            <strong className="text-purple">AI Standby Assistant</strong>
-                                            <div className="text-muted font-size-11">
-                                              Auto-assisted {tbl.aiVisitorsCount} {tbl.aiVisitorsCount === 1 ? 'visitor' : 'visitors'} while executive was away
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div className="p-2 mb-2 rounded bg-light border font-size-11 text-muted d-flex align-items-center gap-1">
-                                          <FaRobot size={12} className="text-secondary" />
-                                          <span>AI Fallback Assistant: Standby Ready</span>
-                                        </div>
-                                      )}
+                                      {Array.from({ length: entryTotalPages }, (_, i) => i + 1)
+                                        .filter((p) => p === 1 || p === entryTotalPages || Math.abs(p - entryPage) <= 1)
+                                        .map((p, idx, arr) => (
+                                          <React.Fragment key={p}>
+                                            {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-muted">...</span>}
+                                            <button
+                                              type="button"
+                                              className={`pagination-btn ${entryPage === p ? 'active' : ''}`}
+                                              onClick={() => setEntryPage(p)}
+                                            >
+                                              {p}
+                                            </button>
+                                          </React.Fragment>
+                                        ))}
 
-                                      {/* Recent Interactions with Rep vs AI attribution */}
-                                      <div className="border-top pt-2 mt-2">
-                                        <small className="fw-bold text-dark d-block mb-1">Recent Table Activity:</small>
-                                        {tbl.visitors.length > 0 ? (
-                                          <div className="list-group list-group-flush">
-                                            {tbl.visitors.slice(0, 3).map((v, vIdx) => (
-                                              <div key={vIdx} className="list-group-item px-0 py-1 border-0 d-flex justify-content-between align-items-center font-size-12">
-                                                <div>
-                                                  <strong>{v.name}</strong> <br />
-                                                  <small className="text-muted d-flex align-items-center gap-1">
-                                                    {v.isAi || v.executiveId === 'AI_BOT' ? (
-                                                      <span className="text-purple d-inline-flex align-items-center gap-1">
-                                                        <FaRobot size={10} /> AI Bot (Standby)
-                                                      </span>
-                                                    ) : (
-                                                      <span className="text-primary d-inline-flex align-items-center gap-1">
-                                                        <FaUserTie size={10} /> {tbl.name}
-                                                      </span>
-                                                    )}
-                                                    • {v.visitedAt}
-                                                  </small>
-                                                </div>
-                                                <span className="badge bg-light text-dark">{v.duration}</span>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <div className="text-muted font-size-12 fst-italic py-1">
-                                            No active interactions recorded yet
-                                          </div>
-                                        )}
-                                      </div>
+                                      <button
+                                        type="button"
+                                        className="pagination-btn"
+                                        onClick={() => setEntryPage((p) => Math.min(entryTotalPages, p + 1))}
+                                        disabled={entryPage >= entryTotalPages}
+                                        title="Next Page"
+                                      >
+                                        &raquo;
+                                      </button>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           )}
 
-                          {/* TAB 3: ALL MEETING ROOM INTERACTION LOGS (from getStallCustomers.php) */}
+                          {/* TAB 2: ALL MEETING ROOM INTERACTION LOGS (from getStallCustomers.php) */}
                           {modalTab === 'INTERACTIONS' && (
                             <div>
-                              <div className="d-flex justify-content-between align-items-center mb-3">
-                                <div>
-                                  <h6 className="mb-0 fw-bold">Meeting Room Interaction Activity Log</h6>
-                                  {/* <small className="text-muted">Customer engagement sessions across executive meeting tables</small> */}
+                              {/* Filter Toolbar */}
+                              <div className="modal-filter-toolbar">
+                                <div className="modal-filter-item flex-grow-1" style={{ minWidth: '180px' }}>
+                                  <label className="modal-filter-label">Search Interaction</label>
+                                  <div className="search-input-wrap">
+                                    <FaSearch className="search-icon" />
+                                    <Form.Control
+                                      type="text"
+                                      placeholder="Search visitor, phone, rep..."
+                                      value={interactionSearchQuery}
+                                      onChange={(e) => {
+                                        setInteractionSearchQuery(e.target.value);
+                                        setInteractionPage(1);
+                                      }}
+                                      className="modal-filter-input w-100"
+                                    />
+                                  </div>
                                 </div>
-                                <div className="search-input-wrap" style={{ width: '260px' }}>
-                                  <FaSearch className="search-icon" />
+
+                                <div className="modal-filter-item">
+                                  <label className="modal-filter-label">From Date</label>
                                   <Form.Control
-                                    type="text"
-                                    placeholder="Search by visitor or executive..."
-                                    value={visitorSearchQuery}
-                                    onChange={(e) => setVisitorSearchQuery(e.target.value)}
-                                    size="sm"
+                                    type="date"
+                                    value={interactionFromDate}
+                                    onChange={(e) => {
+                                      setInteractionFromDate(e.target.value);
+                                      setInteractionPage(1);
+                                    }}
+                                    className="modal-filter-input"
                                   />
                                 </div>
+
+                                <div className="modal-filter-item">
+                                  <label className="modal-filter-label">To Date</label>
+                                  <Form.Control
+                                    type="date"
+                                    value={interactionToDate}
+                                    onChange={(e) => {
+                                      setInteractionToDate(e.target.value);
+                                      setInteractionPage(1);
+                                    }}
+                                    className="modal-filter-input"
+                                  />
+                                </div>
+
+                                <div className="modal-filter-item">
+                                  <label className="modal-filter-label">Table / Room</label>
+                                  <Form.Select
+                                    value={interactionTableFilter}
+                                    onChange={(e) => {
+                                      setInteractionTableFilter(e.target.value);
+                                      setInteractionPage(1);
+                                    }}
+                                    className="modal-filter-select"
+                                  >
+                                    <option value="ALL">All Tables ({selectedStallModal.tablesCount})</option>
+                                    {Array.from({ length: selectedStallModal.tablesCount }, (_, i) => i + 1).map((num) => (
+                                      <option key={num} value={String(num)}>Table {num}</option>
+                                    ))}
+                                  </Form.Select>
+                                </div>
+
+                                <div className="modal-filter-item">
+                                  <label className="modal-filter-label">Staff / Mode</label>
+                                  <Form.Select
+                                    value={interactionStaffFilter}
+                                    onChange={(e) => {
+                                      setInteractionStaffFilter(e.target.value);
+                                      setInteractionPage(1);
+                                    }}
+                                    className="modal-filter-select"
+                                  >
+                                    <option value="ALL">All Staff & AI</option>
+                                    <option value="HUMAN">Human Executives Only</option>
+                                    <option value="AI">AI Bot Standby Only</option>
+                                    {/* Show Assigned Staff optgroup only when "All Tables" is selected */}
+                                    {interactionTableFilter === 'ALL' && stallStaffList.length > 0 && (
+                                      <optgroup label="Assigned Stall Staff & Executives">
+                                        {stallStaffList.map((staff) => (
+                                          <option key={staff.id || staff.name} value={staff.id || staff.name}>
+                                            {staff.name} ({staff.role}{staff.phone ? ` - ${staff.phone}` : ''})
+                                          </option>
+                                        ))}
+                                      </optgroup>
+                                    )}
+                                  </Form.Select>
+                                </div>
+
+                                {(interactionSearchQuery || interactionFromDate || interactionToDate || interactionTableFilter !== 'ALL' || interactionStaffFilter !== 'ALL') && (
+                                  <button
+                                    type="button"
+                                    className="btn-filter-reset"
+                                    onClick={handleResetInteractionFilters}
+                                    title="Reset filters"
+                                  >
+                                    <FaSyncAlt size={11} /> Reset
+                                  </button>
+                                )}
                               </div>
 
-                              <div className="table-responsive">
+                              <div className="table-responsive position-relative">
+                                {interactionLoading && (
+                                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center" style={{ background: 'rgba(255,255,255,0.7)', zIndex: 5 }}>
+                                    <div className="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                  </div>
+                                )}
                                 <table className="custom-analytics-table">
                                   <thead>
                                     <tr>
@@ -1415,51 +1787,123 @@ const ExpoDashboard = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {filteredModalVisitors.map((vis, idx) => (
-                                      <tr key={vis.id || idx}>
-                                        <td>{idx + 1}</td>
-                                        <td>
-                                          <strong>{vis.name}</strong>
-                                        </td>
-                                        <td>
-                                          <span className="d-flex align-items-center gap-1">
-                                            <FaPhoneAlt size={11} className="text-muted" /> {vis.phone}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="d-flex align-items-center gap-1 text-muted">
-                                            <FaEnvelope size={11} /> {vis.email}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="d-flex align-items-center gap-1 text-muted">
-                                            <FaClock size={11} /> {vis.visitedAt}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className={`badge ${vis.isAi || vis.executiveId === 'AI_BOT' ? 'bg-purple-subtle text-secondary border' : 'bg-primary-subtle text-primary border'} px-2 py-1 d-inline-flex align-items-center gap-1`}>
-                                            {(vis.isAi || vis.executiveId === 'AI_BOT') && <FaRobot size={12} />}
-                                            Table {vis.tableNo} - {vis.executiveId === 'AI_BOT' ? 'AI Executive (AI Bot)' : vis.executiveName}
-                                          </span>
-                                        </td>
-                                        <td>
-                                          <span className="badge bg-success-subtle text-success">
-                                            {vis.duration}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    ))}
+                                    {stallCustomersData.map((vis, idx) => {
+                                      const rowNumber = (interactionPage - 1) * interactionPerPage + idx + 1;
+                                      return (
+                                        <tr key={vis.id || idx}>
+                                          <td>{rowNumber}</td>
+                                          <td>
+                                            <strong>{vis.name}</strong>
+                                          </td>
+                                          <td>
+                                            <span className="d-flex align-items-center gap-1">
+                                              <FaPhoneAlt size={11} className="text-muted" /> {vis.phone}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="d-flex align-items-center gap-1 text-muted">
+                                              <FaEnvelope size={11} /> {vis.email}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="d-flex align-items-center gap-1 text-muted">
+                                              <FaClock size={11} /> {vis.visitedAt}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className={`badge ${vis.isAi || vis.executiveId === 'AI_BOT' ? 'bg-purple-subtle text-secondary border' : 'bg-primary-subtle text-primary border'} px-2 py-1 d-inline-flex align-items-center gap-1`}>
+                                              {(vis.isAi || vis.executiveId === 'AI_BOT') ? (
+                                                <>
+                                                  <FaRobot size={12} /> Table {vis.tableNo} - AI Bot (Standby)
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <FaUserTie size={12} /> Table {vis.tableNo} - {vis.executiveName}
+                                                </>
+                                              )}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span className="badge bg-success-subtle text-success">
+                                              {vis.duration}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
 
-                                    {filteredModalVisitors.length === 0 && (
+                                    {stallCustomersData.length === 0 && !interactionLoading && (
                                       <tr>
                                         <td colSpan="7" className="text-center py-4 text-muted">
-                                          No meeting room interactions recorded yet for this stall.
+                                          No meeting room interactions found matching the filter criteria.
                                         </td>
                                       </tr>
                                     )}
                                   </tbody>
                                 </table>
                               </div>
+
+                              {/* Pagination Controls */}
+                              {interactionTotalRecords > 0 && (
+                                <div className="custom-pagination-wrap">
+                                  <div className="pagination-info">
+                                    Showing {Math.min((interactionPage - 1) * interactionPerPage + 1, interactionTotalRecords)} to{' '}
+                                    {Math.min(interactionPage * interactionPerPage, interactionTotalRecords)} of {interactionTotalRecords} interactions
+                                  </div>
+
+                                  <div className="d-flex align-items-center gap-2">
+                                    <Form.Select
+                                      className="pagination-per-page-select"
+                                      value={interactionPerPage}
+                                      onChange={(e) => {
+                                        setInteractionPerPage(Number(e.target.value));
+                                        setInteractionPage(1);
+                                      }}
+                                    >
+                                      <option value={10}>10 / page</option>
+                                      <option value={25}>25 / page</option>
+                                      <option value={50}>50 / page</option>
+                                    </Form.Select>
+
+                                    <div className="pagination-controls">
+                                      <button
+                                        type="button"
+                                        className="pagination-btn"
+                                        onClick={() => setInteractionPage((p) => Math.max(1, p - 1))}
+                                        disabled={interactionPage <= 1}
+                                        title="Previous Page"
+                                      >
+                                        &laquo;
+                                      </button>
+
+                                      {Array.from({ length: interactionTotalPages }, (_, i) => i + 1)
+                                        .filter((p) => p === 1 || p === interactionTotalPages || Math.abs(p - interactionPage) <= 1)
+                                        .map((p, idx, arr) => (
+                                          <React.Fragment key={p}>
+                                            {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-muted">...</span>}
+                                            <button
+                                              type="button"
+                                              className={`pagination-btn ${interactionPage === p ? 'active' : ''}`}
+                                              onClick={() => setInteractionPage(p)}
+                                            >
+                                              {p}
+                                            </button>
+                                          </React.Fragment>
+                                        ))}
+
+                                      <button
+                                        type="button"
+                                        className="pagination-btn"
+                                        onClick={() => setInteractionPage((p) => Math.min(interactionTotalPages, p + 1))}
+                                        disabled={interactionPage >= interactionTotalPages}
+                                        title="Next Page"
+                                      >
+                                        &raquo;
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </>
@@ -1478,7 +1922,7 @@ const ExpoDashboard = () => {
 
             </div>
           </div>
-        </div>
+        </div >
       )}
     </>
   );

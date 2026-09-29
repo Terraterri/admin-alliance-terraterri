@@ -17,7 +17,7 @@ const Header = () => {
           <div className="navbar-logo-box">
             <span className="logo-sm">
               <Link to="/dashboard">
-                <img src="/assets/images/logo.png" alt="logos" width={100} />
+                <img src="/assets/images/airpropx-logo.png" alt="logos" width={100} />
               </Link>
             </span>
           </div>

@@ -89,8 +89,16 @@ const Sidebars = () => {
           url: "/visitors-by-expo",
         },
         {
-          label: 'Visitor Entries',
+          label: 'Expo Visitors',
           url: "/visitors-summary",
+        },
+        {
+          label: 'Stalls Visitors',
+          url: "/stall-visitors",
+        },
+        {
+          label: 'Stalls Interactions',
+          url: "/stall-interactions",
         },
         {
           label: 'Block Visitors',

@@ -28,6 +28,10 @@ const LazyLoad = () => {
   const ExpoSingleview = lazy(() => import(`../pages/expo/ExpoManagement/ExpoSingleview`));
   const BuilderParticipati = lazy(() => import(`../pages/expo/ExpoManagement/BuilderParticipati`));
   const NoofVisitors = lazy(() => import(`../pages/expo/ExpoManagement/NoofVisitors`));
+  const StallInteractions = lazy(() => import(`../pages/expo/ExpoManagement/StallInteractions`));
+  const StallVisitors = lazy(() => import(`../pages/expo/ExpoManagement/StallVisitors`));
+
+
   const NoofVisitorReg = lazy(() => import(`../pages/expo/ExpoManagement/NoofVisitorReg`));
   const CityMaster = lazy(() => import(`../pages/expo/ExpoMaster/CityMaster`));
   const CountryMaster = lazy(() => import(`../pages/expo/ExpoMaster/CountryMaster`));
@@ -107,6 +111,10 @@ const LazyLoad = () => {
           <Route path='/block-number' element={<BlockNumber />} />
 
           <Route path="/visitors-summary" element={<NoofVisitors />} />
+
+          <Route path="/stall-interactions" element={<StallInteractions />} />
+          <Route path="/stall-visitors" element={<StallVisitors />} />
+
 
           <Route path="/visitors-by-expo" element={<NoofVisitorReg />} />
 
