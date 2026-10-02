@@ -86,17 +86,47 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* KPI Summary Cards */
+/* KPI Summary Cards Grid */
+.kpi-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .kpi-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .kpi-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .kpi-card {
   background: #ffffff;
   border-radius: 14px;
   padding: 20px 22px;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
+  height: 100%;
+  min-height: 125px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .kpi-card:hover {

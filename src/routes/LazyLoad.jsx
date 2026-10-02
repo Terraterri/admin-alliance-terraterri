@@ -54,37 +54,19 @@ const LazyLoad = () => {
   const CreateStall = lazy(() => import(`../pages/expo/ExpoManagement/CreateStall`))
 
   const BlockNumber = lazy(() => import(`../pages/expo/ExpoMaster/BlockMobile`));
+  const FranchiseAdminProfile = lazy(() => import(`../pages/expo/FranchiseAdminProfile`));
 
-  // const Expotype = lazy(() => import(`../pages/expo/Expotype`));
-  // const Expotype = lazy(() => import(`../pages/expo/Expotype`));
   const isAuthenticated = Boolean(localStorage.getItem('adminToken'));
-  //  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem('adminToken')));
 
-  //  useEffect(() => {
-  //    const handleStorageChange = (event) => {
-  //      if (event.storageArea === localStorage && !localStorage.getItem('adminToken')) {
-  //        setIsAuthenticated(false);
-  //      }
-  //    };
-
-  //    window.addEventListener('storage', handleStorageChange);
-
-  //    setIsAuthenticated(Boolean(localStorage.getItem('adminToken')));
-
-  //    return () => {
-  //      window.removeEventListener('storage', handleStorageChange);
-  //    };
-  //  }, []);
-  //
   return (
     <Suspense fallback={<Loader />}>
       <Routes>
-        {/* //////////////////////////////// Masters    /////////////////////////////// */}
+        {/* Masters */}
         <Route path="/" element={<Login />} />
-        {/* <PrivateRoute path="/expodashboard" element={<Expodashboard />} /> */}
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
 
           <Route path="/dashboard" element={<Expodashboard />} />
+          <Route path="/profile" element={<FranchiseAdminProfile />} />
           <Route path="/expo/type" element={<Expotype />} />
           <Route path="/masters/city" element={<CityMaster />} />
           <Route path="/masters/country" element={<CountryMaster />} />

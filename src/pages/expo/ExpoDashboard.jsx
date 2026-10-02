@@ -64,12 +64,77 @@ const ExpoDashboard = () => {
   const [selectedExpoCode, setSelectedExpoCode] = useState('');
   const [selectedExpo, setSelectedExpo] = useState(null);
   const [stallBookings, setStallBookings] = useState([]);
-  const [expoVisitors, setExpoVisitors] = useState([]);
 
   // View & Filter States
   const [activeTierFilter, setActiveTierFilter] = useState('ALL');
   const [viewMode, setViewMode] = useState('GRID'); // 'GRID' or 'TABLE'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Month Filter State for 27-Stall Booking Analytics (Default to Current Month)
+  const currentMonthVal = useMemo(() => moment().format('YYYY-MM'), []);
+  const currentFromDateStr = useMemo(() => moment().startOf('month').format('YYYY-MM-DD'), []);
+  const currentToDateStr = useMemo(() => moment().endOf('month').format('YYYY-MM-DD'), []);
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthVal);
+  const [selectedFromDate, setSelectedFromDate] = useState(currentFromDateStr);
+  const [selectedToDate, setSelectedToDate] = useState(currentToDateStr);
+
+  // Available Months Options (Year 2026 / current year)
+  const monthOptions = useMemo(() => {
+    const months = [];
+    const currentYear = moment().year(); // e.g. 2026
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    monthNames.forEach((monthName, index) => {
+      const mIndex = index + 1;
+      const monthStr = mIndex < 10 ? `0${mIndex}` : `${mIndex}`;
+      const val = `${currentYear}-${monthStr}`;
+
+      const lastDay = new Date(currentYear, mIndex, 0).getDate();
+      const lastDayStr = lastDay < 10 ? `0${lastDay}` : `${lastDay}`;
+      const fromDateStr = `${currentYear}-${monthStr}-01`;
+      const toDateStr = `${currentYear}-${monthStr}-${lastDayStr}`;
+      const displayFrom = `01-${monthStr}-${currentYear}`;
+      const displayTo = `${lastDayStr}-${monthStr}-${currentYear}`;
+
+      months.push({
+        value: val,
+        label: `${monthName} ${currentYear}`,
+        monthName,
+        year: currentYear,
+        fromDateStr,
+        toDateStr,
+        displayFrom,
+        displayTo
+      });
+    });
+
+    return months;
+  }, []);
+
+  const selectedMonthObj = useMemo(() => {
+    return monthOptions.find((m) => m.value === selectedMonth) || null;
+  }, [monthOptions, selectedMonth]);
+
+  const handleMonthChange = (e) => {
+    const val = e.target.value;
+    setSelectedMonth(val);
+    if (val === 'ALL') {
+      setSelectedFromDate('');
+      setSelectedToDate('');
+      loadExpoAnalytics(selectedExpoCode, '', '');
+    } else {
+      const found = monthOptions.find((m) => m.value === val);
+      if (found) {
+        setSelectedFromDate(found.fromDateStr);
+        setSelectedToDate(found.toDateStr);
+        loadExpoAnalytics(selectedExpoCode, found.fromDateStr, found.toDateStr);
+      }
+    }
+  };
 
   // Modal State for Stall Drilldown
   const [selectedStallModal, setSelectedStallModal] = useState(null);
@@ -129,7 +194,7 @@ const ExpoDashboard = () => {
 
       // 1. Get Top Dashboard Info
       try {
-        const countRes = await expoAdminClient.get('/dashboard/getAllinfo.php', config);
+        const countRes = await expoAdminClient.get('/dashboard/getExpoDashboardInfo.php', config);
         if (countRes?.data?.status) {
           setAllCount(countRes.data);
         }
@@ -159,7 +224,7 @@ const ExpoDashboard = () => {
       if (defaultExpo) {
         setSelectedExpoCode(defaultExpo.expoUnqCode);
         setSelectedExpo(defaultExpo);
-        await loadExpoAnalytics(defaultExpo.expoUnqCode);
+        await loadExpoAnalytics(defaultExpo.expoUnqCode, currentFromDateStr, currentToDateStr);
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -170,7 +235,7 @@ const ExpoDashboard = () => {
   };
 
   // Load analytics for a specific expo
-  const loadExpoAnalytics = async (expoCode) => {
+  const loadExpoAnalytics = async (expoCode, fromDate = selectedFromDate, toDate = selectedToDate) => {
     if (!expoCode) return;
     setDataRefreshing(true);
     try {
@@ -180,26 +245,29 @@ const ExpoDashboard = () => {
         }
       };
 
-      // Fetch bookings for this expo
-      const bookingsPromise = expoAdminClient.get(`NewExpo/getExpoBookings.php?id=${expoCode}&limit=100&skip=0`, config);
-      // Fetch visitors for this expo
-      const visitorsPromise = expoAdminClient.get(`expoUserAnalytics/expo/get.php?expoId=${expoCode}&limit=500&skip=0`, config);
+      // 1. Fetch top dashboard info for active expo (returns overall totals)
+      const countPromise = expoAdminClient.get(`/dashboard/getExpoDashboardInfo.php?expoId=${expoCode}`, config);
 
-      const [bookingsRes, visitorsRes] = await Promise.allSettled([bookingsPromise, visitorsPromise]);
+      // 2. Fetch bookings for this expo filtered by month date range
+      let bookingsUrl = `NewExpo/getExpoBookings.php?id=${expoCode}&limit=100&skip=0`;
+      if (fromDate) bookingsUrl += `&fromDate=${encodeURIComponent(fromDate)}`;
+      if (toDate) bookingsUrl += `&toDate=${encodeURIComponent(toDate)}`;
+
+      const bookingsPromise = expoAdminClient.get(bookingsUrl, config);
+
+      const [countRes, bookingsRes] = await Promise.allSettled([countPromise, bookingsPromise]);
+
+      if (countRes.status === 'fulfilled' && countRes.value?.data?.status) {
+        setAllCount(countRes.value.data);
+      }
 
       if (bookingsRes.status === 'fulfilled' && bookingsRes.value?.data?.status) {
         setStallBookings(bookingsRes.value.data.data || []);
       } else {
         setStallBookings([]);
       }
-
-      if (visitorsRes.status === 'fulfilled' && visitorsRes.value?.data?.status) {
-        setExpoVisitors(visitorsRes.value.data.data || []);
-      } else {
-        setExpoVisitors([]);
-      }
     } catch (err) {
-      console.error('Error loading expo bookings & visitors:', err);
+      console.error('Error loading expo analytics & bookings:', err);
     } finally {
       setDataRefreshing(false);
     }
@@ -216,15 +284,31 @@ const ExpoDashboard = () => {
     setSelectedExpo(found);
     if (code) {
       localStorage.setItem('expoCode', code);
-      loadExpoAnalytics(code);
+      loadExpoAnalytics(code, selectedFromDate, selectedToDate);
     }
   };
+
+  // Filter stallBookings by date range client-side as fallback safety
+  const filteredStallBookings = useMemo(() => {
+    if (selectedMonth === 'ALL' || !selectedFromDate || !selectedToDate) {
+      return stallBookings;
+    }
+    const from = moment(selectedFromDate, 'YYYY-MM-DD').startOf('day');
+    const to = moment(selectedToDate, 'YYYY-MM-DD').endOf('day');
+
+    return stallBookings.filter((b) => {
+      const bDateStr = b.bookingStartDate || b.created_at || b.date || b.booking_date || b.joined_at;
+      if (!bDateStr) return true;
+      const parsed = moment(bDateStr);
+      return parsed.isValid() ? parsed.isBetween(from, to, null, '[]') : true;
+    });
+  }, [stallBookings, selectedMonth, selectedFromDate, selectedToDate]);
 
   // Compile full 27 stalls data enriched with booking, visitor and meeting stats
   const compiled27Stalls = useMemo(() => {
     return STALL_CONFIGS.map((cfg) => {
       // Find booking for this stall code (D1, P1, S4, etc.)
-      const booking = stallBookings.find((b) => {
+      const booking = filteredStallBookings.find((b) => {
         const bCode = b.stallUnqCode || b.stall_unq_code || b.stallCode || '';
         return bCode.toUpperCase() === cfg.code.toUpperCase();
       });
@@ -292,30 +376,63 @@ const ExpoDashboard = () => {
         brochureDownloads
       };
     });
-  }, [stallBookings, expoVisitors]);
+  }, [filteredStallBookings]);
 
-  // Overall analytics aggregates
+  // Overall analytics aggregates (Totals from getExpoDashboardInfo.php)
   const analyticsSummary = useMemo(() => {
     const totalStalls = 27;
-    const occupiedStalls = compiled27Stalls.filter((s) => s.isOccupied).length;
-    const totalStallVisits = compiled27Stalls.reduce((sum, s) => sum + s.visitorsCount, 0);
-    const totalMeetingInteractions = compiled27Stalls.reduce((sum, s) => sum + s.meetingInteractionsCount, 0);
-    const totalBrochureDownloads = compiled27Stalls.reduce((sum, s) => sum + s.brochureDownloads, 0);
+
+    // Fallbacks calculated from stallBookings if API properties are absent
+    const calculatedStallVisits = stallBookings.reduce((sum, b) => {
+      const vCount = Number(b.visitorCount ?? b.visitorsCount ?? (Array.isArray(b.visitors) ? b.visitors.length : 0)) || 0;
+      return sum + vCount;
+    }, 0);
+
+    const calculatedMeetingInteractions = stallBookings.reduce((sum, b) => {
+      const mCount = Number(b.visitorTableCount ?? b.visitor_table_count ?? b.tableInteractionsCount ?? 0) || 0;
+      return sum + mCount;
+    }, 0);
+
+    const totalBrochureDownloads = stallBookings.reduce((sum, b) => {
+      return sum + (Number(b.brochureDownloads) || 0);
+    }, 0);
+
+    // Selected month stall counts for 27-Stall Booking Analytics section
+    const monthOccupiedStalls = compiled27Stalls.filter((s) => s.isOccupied).length;
+    const monthAvailableStalls = totalStalls - monthOccupiedStalls;
 
     // Find top visited stall
     const topStall = [...compiled27Stalls].sort((a, b) => b.visitorsCount - a.visitorsCount)[0];
 
+    // Priority to getExpoDashboardInfo.php API response fields
+    const totalVisitors = allCount?.totalExpoVisitors !== undefined
+      ? Number(allCount.totalExpoVisitors)
+      : (allCount?.currentUserExpoVisitorsCount !== undefined ? Number(allCount.currentUserExpoVisitorsCount) : calculatedStallVisits);
+
+    const totalStallVisits = allCount?.totalStallWiseVisitors !== undefined
+      ? Number(allCount.totalStallWiseVisitors)
+      : calculatedStallVisits;
+
+    const totalMeetingInteractions = allCount?.meetingRoomInteractions !== undefined
+      ? Number(allCount.meetingRoomInteractions)
+      : calculatedMeetingInteractions;
+
+    const overallOccupiedStalls = allCount?.totalBuildersExhibited !== undefined
+      ? Number(allCount.totalBuildersExhibited)
+      : stallBookings.length;
+
     return {
       totalStalls,
-      occupiedStalls,
-      availableStalls: totalStalls - occupiedStalls,
-      totalVisitors: expoVisitors.length || allCount?.currentUserExpoVisitorsCount || totalStallVisits,
+      occupiedStalls: monthOccupiedStalls,
+      availableStalls: monthAvailableStalls,
+      overallOccupiedStalls,
+      totalVisitors,
       totalStallVisits,
       totalMeetingInteractions,
       totalBrochureDownloads,
       topStall: topStall && topStall.visitorsCount > 0 ? topStall : null
     };
-  }, [compiled27Stalls, expoVisitors, allCount]);
+  }, [allCount, stallBookings, compiled27Stalls]);
 
   // Filtered stalls based on tier and search
   const filteredStalls = useMemo(() => {
@@ -1013,87 +1130,77 @@ const ExpoDashboard = () => {
                 )}
               </div>
 
-              {/* KPI Summary Row */}
-              <div className="row">
-                <div className="col-xl-2 col-md-6">
-                  <div className="kpi-card kpi-primary">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div>
-                        <div className="kpi-label">Total Expo Visitors</div>
-                        <h3 className="kpi-value"><a href="/visitors-summary">{analyticsSummary.totalVisitors}</a></h3>
-                        <div className="kpi-subtext">Overall registered & live footfall</div>
-                      </div>
-                      <div className="kpi-icon-wrap bg-primary-light">
-                        <FaUsers />
-                      </div>
+              {/* KPI Summary Row - Equal Size 5 Column Grid */}
+              <div className="kpi-summary-grid">
+                <div className="kpi-card kpi-primary">
+                  <div className="d-flex align-items-center justify-content-between h-100">
+                    <div>
+                      <div className="kpi-label">Total Expo Visitors</div>
+                      <h3 className="kpi-value"><a href="/visitors-summary">{analyticsSummary.totalVisitors}</a></h3>
+                      <div className="kpi-subtext">Overall registered & live footfall</div>
+                    </div>
+                    <div className="kpi-icon-wrap bg-primary-light flex-shrink-0 ms-2">
+                      <FaUsers />
                     </div>
                   </div>
                 </div>
 
-                <div className="col-xl-2 col-md-6">
-                  <div className="kpi-card kpi-success">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div>
-                        <div className="kpi-label">Total Stall Wise Visitors</div>
-                        <h3 className="kpi-value"><a href="/stall-visitors">{analyticsSummary.totalStallVisits}</a></h3>
-                        <div className="kpi-subtext">Aggregated visits across 27 stalls</div>
-                      </div>
-                      <div className="kpi-icon-wrap bg-success-light">
-                        <FaStore />
-                      </div>
+                <div className="kpi-card kpi-success">
+                  <div className="d-flex align-items-center justify-content-between h-100">
+                    <div>
+                      <div className="kpi-label">Total Stall Wise Visitors</div>
+                      <h3 className="kpi-value"><a href="/stall-visitors">{analyticsSummary.totalStallVisits}</a></h3>
+                      <div className="kpi-subtext">Aggregated visits across 27 stalls</div>
+                    </div>
+                    <div className="kpi-icon-wrap bg-success-light flex-shrink-0 ms-2">
+                      <FaStore />
                     </div>
                   </div>
                 </div>
 
-                <div className="col-xl-2 col-md-6">
-                  <div className="kpi-card kpi-purple">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div>
-                        <div className="kpi-label">Meeting Room Interactions</div>
-                        <h3 className="kpi-value"><a href="/stall-interactions">{analyticsSummary.totalMeetingInteractions}</a></h3>
-                        <div className="kpi-subtext">Executive table chats & calls</div>
-                      </div>
-                      <div className="kpi-icon-wrap bg-purple-light">
-                        <MdMeetingRoom />
-                      </div>
+                <div className="kpi-card kpi-purple">
+                  <div className="d-flex align-items-center justify-content-between h-100">
+                    <div>
+                      <div className="kpi-label">Meeting Room Interactions</div>
+                      <h3 className="kpi-value"><a href="/stall-interactions">{analyticsSummary.totalMeetingInteractions}</a></h3>
+                      <div className="kpi-subtext">Executive table chats & calls</div>
+                    </div>
+                    <div className="kpi-icon-wrap bg-purple-light flex-shrink-0 ms-2">
+                      <MdMeetingRoom />
                     </div>
                   </div>
                 </div>
 
-                <div className="col-xl-2 col-md-6">
-                  <div className="kpi-card kpi-warning">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div>
-                        <div className="kpi-label">Total Builders Exhibited</div>
-                        <h3 className="kpi-value">
-                          <a href="/builderparticipate"> {analyticsSummary.occupiedStalls} <span className="text-muted font-size-14" style={{ fontSize: '15px' }}></span></a>
-                        </h3>
-                        <div className="kpi-subtext">
-                          {analyticsSummary.availableStalls} stalls available for booking
-                        </div>
+                <div className="kpi-card kpi-warning">
+                  <div className="d-flex align-items-center justify-content-between h-100">
+                    <div>
+                      <div className="kpi-label">Total Builders Exhibited</div>
+                      <h3 className="kpi-value">
+                        <a href="/builderparticipate"> {analyticsSummary.overallOccupiedStalls} </a>
+                      </h3>
+                      <div className="kpi-subtext">
+                        Overall total exhibitors across all events
                       </div>
-                      <div className="kpi-icon-wrap bg-warning-light">
-                        <FaBuilding />
-                      </div>
+                    </div>
+                    <div className="kpi-icon-wrap bg-warning-light flex-shrink-0 ms-2">
+                      <FaBuilding />
                     </div>
                   </div>
                 </div>
 
-                <div className="col-xl-2 col-md-6">
-                  <div className="kpi-card kpi-warning">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div>
-                        <div className="kpi-label">Current Month Builders Exhibited</div>
-                        <h3 className="kpi-value">
-                          <a href="/builderparticipate"> {analyticsSummary.occupiedStalls} <span className="text-muted font-size-14" style={{ fontSize: '15px' }}>/ {analyticsSummary.totalStalls}</span></a>
-                        </h3>
-                        <div className="kpi-subtext">
-                          {analyticsSummary.availableStalls} stalls available for booking
-                        </div>
+                <div className="kpi-card kpi-warning">
+                  <div className="d-flex align-items-center justify-content-between h-100">
+                    <div>
+                      <div className="kpi-label">{selectedMonthObj ? `${selectedMonthObj.monthName} Builders` : 'Monthly Builders'}</div>
+                      <h3 className="kpi-value">
+                        <a href="/builderparticipate"> {analyticsSummary.occupiedStalls} <span className="text-muted font-size-14" style={{ fontSize: '15px' }}>/ {analyticsSummary.totalStalls}</span></a>
+                      </h3>
+                      <div className="kpi-subtext">
+                        {analyticsSummary.availableStalls} stalls available for booking
                       </div>
-                      <div className="kpi-icon-wrap bg-warning-light">
-                        <FaBuilding />
-                      </div>
+                    </div>
+                    <div className="kpi-icon-wrap bg-warning-light flex-shrink-0 ms-2">
+                      <FaBuilding />
                     </div>
                   </div>
                 </div>
@@ -1102,13 +1209,47 @@ const ExpoDashboard = () => {
               {/* Main Stall Analytics Card */}
               <div className="analytics-section-card">
                 <div className="analytics-card-header">
-                  <div className="analytics-card-title">
-                    <BsShop className="text-primary" />
-                    <span>27-Stall Booking Analytics</span>
+                  <div className="analytics-card-title flex-wrap gap-2">
+                    <div className="d-flex align-items-center gap-2">
+                      <BsShop className="text-primary" />
+                      <span>27-Stall Booking Analytics</span>
+                    </div>
+
+                    {/* Month Filter Selector */}
+                    <div className="month-filter-dropdown-wrap d-inline-flex align-items-center gap-2 bg-light border rounded-3 px-2 py-1 ms-2">
+                      {dataRefreshing ? (
+                        <FaSyncAlt className="text-primary font-size-14 fa-spin" />
+                      ) : (
+                        <FaCalendarAlt className="text-primary font-size-14" />
+                      )}
+                      <Form.Select
+                        size="sm"
+                        value={selectedMonth}
+                        onChange={handleMonthChange}
+                        className="border-0 bg-transparent fw-semibold text-dark shadow-none cursor-pointer"
+                        style={{ minWidth: '160px', paddingRight: '24px' }}
+                      >
+                        <option value="ALL">All Months (Total)</option>
+                        {monthOptions.map((m) => (
+                          <option key={m.value} value={m.value}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </div>
+
+                    {selectedMonth !== 'ALL' && selectedMonthObj && (
+                      <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 font-size-12 rounded-pill d-inline-flex align-items-center gap-1">
+                        <FaClock size={11} />
+                        <span>from_date: <strong>{selectedMonthObj.displayFrom}</strong></span>
+                        <span className="mx-1">|</span>
+                        <span>to_date: <strong>{selectedMonthObj.displayTo}</strong></span>
+                      </span>
+                    )}
                   </div>
 
                   {/* Filter Controls */}
-                  <div className="d-flex flex-wrap align-items-center gap-2">
+                  <div className="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
                     <div className="stall-filter-pills">
                       <button
                         className={`stall-filter-btn ${activeTierFilter === 'ALL' ? 'active' : ''}`}
@@ -1155,16 +1296,6 @@ const ExpoDashboard = () => {
                         Available ({analyticsSummary.availableStalls})
                       </button>
                     </div>
-
-                    {/* Status Legend */}
-                    {/* <div className="stall-status-legend d-none d-md-flex">
-                      <span className="legend-item">
-                        <span className="legend-dot dot-booked"></span> Booked ({analyticsSummary.occupiedStalls})
-                      </span>
-                      <span className="legend-item">
-                        <span className="legend-dot dot-available"></span> Available ({analyticsSummary.availableStalls})
-                      </span>
-                    </div> */}
 
                     <div className="d-flex align-items-center gap-2 ms-auto">
                       <div className="search-input-wrap" style={{ minWidth: '200px' }}>

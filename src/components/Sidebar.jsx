@@ -11,6 +11,10 @@ const Sidebars = () => {
       url: "/dashboard",
       className: 'active',
     },
+    {
+      label: 'Franchise Profile',
+      url: "/profile",
+    },
 
     // {
     //   label: 'Expo Master',
