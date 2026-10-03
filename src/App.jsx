@@ -52,7 +52,7 @@ function App() {
 
   const getIpInfo = async () => {
     try {
-      const response = await expoAdminClient.get('http://ip-api.com/json');
+      const response = await expoAdminClient.get('https://ip-api.com/json');
       if (response.data) {
         setIpInfo(response?.data?.query);
       }

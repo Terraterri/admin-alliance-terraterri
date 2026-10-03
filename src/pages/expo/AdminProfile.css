@@ -166,3 +166,97 @@
 .font-mono {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
+
+/* Enhanced Franchise Details Cards */
+.profile-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  height: 100%;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.profile-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #e2e8f0;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Document Cards Styling */
+.doc-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  transition: all 0.25s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.doc-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.12);
+  transform: translateY(-3px);
+}
+
+.doc-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.bg-light-primary {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+.bg-light-success {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.bg-light-warning {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.bg-light-purple {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+}
+
+.bg-light-info {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.bg-light-danger {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.style-max-h-500 {
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.style-h-400 {
+  height: 400px;
+}
+
+
